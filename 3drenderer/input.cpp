@@ -1,10 +1,10 @@
 #include "input.h"
 
 namespace input {
-	void process(bool& is_running)
+	void process(bool& is_running, SDLWrapper& sdl)
 	{
 		SDL_Event event{};
-		SDL_PollEvent(&event);
+		sdl.SDL_PollEvent(&event);
 
 		switch (event.type)
 		{

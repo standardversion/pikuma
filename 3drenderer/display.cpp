@@ -1,23 +1,23 @@
 #include "display.h"
 
 namespace display {
-	bool initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode)
+	bool initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, SDLWrapper& sdl)
 	{
 		// Initialize the SDL library
 		// SDL_INIT_EVERYTHING flag initializes audio, video, controller etc subsystems
-		if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+		if (sdl.SDL_Init(SDL_INIT_EVERYTHING) != 0)
 		{
 			std::cout << "Error initializing SLD.\n";
 			return false;
 		}
 		// Get the current display mode so we can figure out current display dimensions
-		if (SDL_GetCurrentDisplayMode(0, display_mode) != 0)
+		if (sdl.SDL_GetCurrentDisplayMode(0, display_mode) != 0)
 		{
 			std::cout << "Error getting SLD Display mode.\n";
 			return false;
 		}
 		// Create the SDL Window
-		window = SDL_CreateWindow(
+		window = sdl.SDL_CreateWindow(
 			NULL,
 			SDL_WINDOWPOS_CENTERED,
 			SDL_WINDOWPOS_CENTERED,
@@ -33,7 +33,7 @@ namespace display {
 		// Create SDL Renderer, a 2d rendering context for a window
 		// -1 to initialize the first driver supporting the requested flags.
 		// 0 is no flags requested
-		renderer = SDL_CreateRenderer(window, -1, 0);
+		renderer = sdl.SDL_CreateRenderer(window, -1, 0);
 
 		if (!renderer)
 		{
@@ -41,7 +41,7 @@ namespace display {
 			return false;
 		}
 
-		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+		sdl.SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 		return true;
 	}
 
@@ -87,45 +87,45 @@ namespace display {
 		}
 	}
 
-	void render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, SDL_Renderer*& renderer)
+	void render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, SDL_Renderer*& renderer, SDLWrapper& sdl)
 	{
 		// update the texture with the contents of the colour buffer
-		SDL_UpdateTexture(
+		sdl.SDL_UpdateTexture(
 			colour_buffer_texture,
 			NULL,
 			colour_buffer,
 			static_cast<int>(display_mode->w * sizeof(std::uint32_t))
 		);
 		// copy the texture onto the renderer, null, null copies entire texture
-		SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
+		sdl.SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
 	}
 
-	void render(SDL_Renderer*& renderer, SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode)
+	void render(SDL_Renderer*& renderer, SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, SDLWrapper& sdl)
 	{
 		// set the renderer colour to black
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		sdl.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		// clear the renderer
-		SDL_RenderClear(renderer);
+		sdl.SDL_RenderClear(renderer);
 
 		draw_grid(colour_buffer, display_mode, 0xFFFFFFFF, 0x00000000);
 
 		draw_rect(colour_buffer, display_mode, 500, 100, 1000, 1000, 0xFFFFFF00);
 
 		// render the colour buffer
-		render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer);
+		render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer, sdl);
 		// fill the colour buffer with a colour value
 		clear_colour_buffer(colour_buffer, display_mode, 0x00000000);
 
 		// Update the screen with any rendering performed since the previous call.
-		SDL_RenderPresent(renderer);
+		sdl.SDL_RenderPresent(renderer);
 	}
 
-	void cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer)
+	void cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, SDLWrapper& sdl)
 	{
 		// SDL cleanup
-		SDL_DestroyRenderer(renderer);
-		SDL_DestroyWindow(window);
-		SDL_Quit();
+		sdl.SDL_DestroyRenderer(renderer);
+		sdl.SDL_DestroyWindow(window);
+		sdl.SDL_Quit();
 		// set pointers to nullptr
 		renderer = nullptr;
 		window = nullptr;
@@ -134,12 +134,12 @@ namespace display {
 		colour_buffer = nullptr;
 	}
 
-	bool setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode) 
+	bool setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode, SDLWrapper& sdl)
 	{
 		// first create the window and rendering context
-		bool initiatized = display::initialize_window(window, renderer, displaymode);
+		bool initiatized = display::initialize_window(window, renderer, displaymode, sdl);
 		// Create a texture for a rendering context. ie to display the colour buffer
-		colour_buffer_texture = SDL_CreateTexture(
+		colour_buffer_texture = sdl.SDL_CreateTexture(
 			renderer,
 			SDL_PIXELFORMAT_ARGB8888,
 			SDL_TEXTUREACCESS_STREAMING,

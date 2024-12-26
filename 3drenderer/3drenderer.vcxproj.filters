@@ -32,5 +32,8 @@
     <ClInclude Include="input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="sdlwrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
