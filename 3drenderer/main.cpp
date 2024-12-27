@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 	SDL_Renderer* renderer{ nullptr };
 	SDL_Texture* colour_buffer_texture{ nullptr };
 	SDL_DisplayMode display_mode;
-	SDLWrapper sdl(
+	SDLImpl _sdl{
 		&SDL_CreateRenderer,
 		&SDL_CreateTexture,
 		&SDL_CreateWindow,
@@ -34,7 +34,8 @@ int main(int argc, char* argv[])
 		&SDL_SetRenderDrawColor,
 		&SDL_SetWindowFullscreen,
 		&SDL_UpdateTexture
-	);
+	};
+	SDLWrapper sdl(_sdl);
 	
 	bool is_running{ display::setup(colour_buffer_texture, window, renderer, &display_mode, sdl) };
 	std::uint32_t* colour_buffer{ new std::uint32_t[display_mode.w * display_mode.h]{} };
