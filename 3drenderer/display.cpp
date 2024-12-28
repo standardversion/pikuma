@@ -45,14 +45,14 @@ namespace display {
 		return true;
 	}
 
-	void draw_grid(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, std::uint32_t line_colour, std::uint32_t bg_colour)
+	void draw_grid(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, std::uint32_t line_colour, std::uint32_t bg_colour, int grid_on)
 	{
 		for (int y{ 0 }; y < display_mode->h; y++)
 		{
-			bool fill_y = y == 0 ? false : y % 10 ? false : true;
+			bool fill_y = (y + 1) % grid_on ? false : true;
 			for (int x{ 0 }; x < display_mode->w; x++)
 			{
-				bool fill_x = x == 0 ? false : x % 10 ? false : true;
+				bool fill_x = (x + 1) % grid_on ? false : true;
 				std::uint32_t colour = fill_x || fill_y ? line_colour : bg_colour;
 				colour_buffer[(display_mode->w * y) + x] = colour;
 			}
@@ -107,7 +107,7 @@ namespace display {
 		// clear the renderer
 		sdl.SDL_RenderClear(renderer);
 
-		draw_grid(colour_buffer, display_mode, 0xFFFFFFFF, 0x00000000);
+		draw_grid(colour_buffer, display_mode, 0xFFFFFFFF, 0x00000000, 10);
 
 		draw_rect(colour_buffer, display_mode, 500, 100, 1000, 1000, 0xFFFFFF00);
 
@@ -137,16 +137,17 @@ namespace display {
 	bool setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode, SDLWrapper& sdl)
 	{
 		// first create the window and rendering context
-		bool initiatized = display::initialize_window(window, renderer, displaymode, sdl);
-		// Create a texture for a rendering context. ie to display the colour buffer
-		colour_buffer_texture = sdl.SDL_CreateTexture(
-			renderer,
-			SDL_PIXELFORMAT_ARGB8888,
-			SDL_TEXTUREACCESS_STREAMING,
-			displaymode->w,
-			displaymode->h
-		);
-
-		return initiatized;
+		bool initialized = display::initialize_window(window, renderer, displaymode, sdl);
+		if (initialized) {
+			// Create a texture for a rendering context. ie to display the colour buffer
+			colour_buffer_texture = sdl.SDL_CreateTexture(
+				renderer,
+				SDL_PIXELFORMAT_ARGB8888,
+				SDL_TEXTUREACCESS_STREAMING,
+				displaymode->w,
+				displaymode->h
+			);
+		}
+		return initialized;
 	}
 }

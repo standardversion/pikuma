@@ -18,27 +18,12 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="display.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="input.cpp">
+    <ClCompile Include="display_tests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="display.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="input.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sdlwrapper_old.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sdlwrapper_impl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sdlwrapper.h">
+    <ClInclude Include="sdl_mock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
