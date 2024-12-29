@@ -32,12 +32,6 @@
     <ClInclude Include="input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="sdlwrapper_old.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sdlwrapper_impl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="sdlwrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>

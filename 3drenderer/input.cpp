@@ -1,11 +1,11 @@
 #include "input.h"
 
-namespace input {
-	void process(bool& is_running, SDLWrapper& sdl)
+namespace input
+{
+	void Input::process(bool& is_running, SDL_Event& event, SDLWrapper& sdl)
 	{
-		SDL_Event event{};
+		
 		sdl.SDL_PollEvent(&event);
-
 		switch (event.type)
 		{
 		case SDL_QUIT:

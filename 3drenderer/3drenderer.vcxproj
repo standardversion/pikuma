@@ -162,9 +162,7 @@
   <ItemGroup>
     <ClInclude Include="display.h" />
     <ClInclude Include="input.h" />
-    <ClInclude Include="sdlwrapper_old.h" />
     <ClInclude Include="sdlwrapper.h" />
-    <ClInclude Include="sdlwrapper_impl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

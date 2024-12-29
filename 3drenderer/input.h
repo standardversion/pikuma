@@ -2,6 +2,12 @@
 #include <SDL.h>
 #include "sdlwrapper.h"
 
-namespace input {
-	void process(bool& is_running, SDLWrapper& sdl);
+namespace input
+{
+	class Input
+	{
+	public:
+		virtual ~Input() = default;
+		virtual void process(bool& is_running, SDL_Event& event, SDLWrapper& sdl);
+	};
 }
