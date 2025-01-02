@@ -3,6 +3,7 @@
 #include "../sdlwrapper.h"
 #include "sdl_mock.h"
 #include "../display.h"
+#include "../vector2d.h"
 #include <SDL.h>
 
 namespace display_tests
@@ -80,6 +81,69 @@ namespace display_tests
 		}
 		//std::string output = ::testing::internal::GetCapturedStdout();
 		//std::cout << "Captured Output: " << std::endl << output << std::endl;  // Print captured output
+		delete[] colour_buffer;
+		colour_buffer = nullptr;
+		delete[] expected_colour_buffer;
+		expected_colour_buffer = nullptr;
+	}
+
+	TEST(display_test, draw_pixel_within_window)
+	{
+		display_mode.w = 5;
+		display_mode.h = 5;
+		std::uint32_t bg{ 0x00000000 };
+		std::uint32_t cl{ 0xFFFFFFFF };
+		std::uint32_t* colour_buffer{ new std::uint32_t[25]{
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+		} };
+		std::uint32_t* expected_colour_buffer{ new std::uint32_t[25]{
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+		} };
+
+		dsp.draw_pixel(colour_buffer, &display_mode, 10, 20, cl);
+		for (int y{ 0 }; y < 25; y++)
+		{
+			EXPECT_EQ(colour_buffer[y], expected_colour_buffer[y]);
+		}
+		delete[] colour_buffer;
+		colour_buffer = nullptr;
+		delete[] expected_colour_buffer;
+		expected_colour_buffer = nullptr;
+	}
+
+	TEST(display_test, draw_pixel_success)
+	{
+		display_mode.w = 5;
+		display_mode.h = 5;
+		std::uint32_t bg{ 0x00000000 };
+		std::uint32_t cl{ 0xFFFFFFFF };
+		std::uint32_t* colour_buffer{ new std::uint32_t[25]{
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+		} };
+		std::uint32_t* expected_colour_buffer{ new std::uint32_t[25]{
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, cl, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+			bg, bg, bg, bg, bg,
+		} };
+		dsp.draw_pixel(colour_buffer, &display_mode, 1, 2, cl);
+		for (int y{ 0 }; y < 25; y++)
+		{
+			EXPECT_EQ(colour_buffer[y], expected_colour_buffer[y]);
+		}
 		delete[] colour_buffer;
 		colour_buffer = nullptr;
 		delete[] expected_colour_buffer;
@@ -201,13 +265,12 @@ namespace display_tests
 		std::uint32_t bg{ 0x00000000 };
 		std::uint32_t ln{ 0xFFFFFFFF };
 		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
-		EXPECT_CALL(mock_sdl, SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255))
-			.WillOnce(::testing::Return(0));
-		EXPECT_CALL(mock_sdl, SDL_RenderClear(renderer))
-			.WillOnce(::testing::Return(0));
+		display_mode.w = 4;
+		display_mode.h = 4;
+		std::vector<vector::Vector2d> projected_points{ vector::Vector2d{2.0, 2.0} };
 		EXPECT_CALL(mock_dsp, draw_grid(colour_buffer, &display_mode, ln, bg, 1))
 			.WillOnce(::testing::Return());
-		EXPECT_CALL(mock_dsp, draw_rect(colour_buffer, &display_mode, 0, 0, 1, 1, ln))
+		EXPECT_CALL(mock_dsp, draw_rect(colour_buffer, &display_mode, 4, 4, 4, 4, ::testing::_))
 			.WillOnce(::testing::Return());
 		// this causes compilation error if mock_sdl is passed instead of ::testing::_
 		EXPECT_CALL(mock_dsp, render_colour_buffer(colour_buffer_texture, colour_buffer, &display_mode, renderer, ::testing::_))
@@ -225,11 +288,7 @@ namespace display_tests
 			ln,
 			bg,
 			1,
-			0,
-			0,
-			1,
-			1,
-			ln,
+			projected_points,
 			mock_sdl
 		);
 		delete[] colour_buffer;

@@ -45,13 +45,22 @@ namespace display
 		}
 	}
 
+	void Display::draw_pixel(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int x, int y, std::uint32_t colour)
+	{
+		if (x >= 0 && x < display_mode->w && y>= 0 &&  y < display_mode->h)
+		{
+			colour_buffer[(display_mode->w * y) + x] = colour;
+		}
+		
+	}
+
 	void Display::draw_rect(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, std::uint32_t colour)
 	{
-		for (int y{ start_y }; y < height; y++)
+		for (int i{ 0 }; i < width; i++)
 		{
-			for (int x{ start_x }; x < width; x++)
+			for (int j{ 0 }; j < height; j++)
 			{
-				colour_buffer[(display_mode->w * y) + x] = colour;
+				draw_pixel(colour_buffer, display_mode, start_x + i, start_y + j, colour);
 			}
 		}
 	}
@@ -108,22 +117,26 @@ namespace display
 		std::uint32_t line_colour,
 		std::uint32_t bg_colour,
 		int grid_on,
-		int rect_start_x,
-		int rect_start_y,
-		int rect_width,
-		int rect_height,
-		std::uint32_t rect_colour,
+		std::vector<vector::Vector2d>& projected_points,
 		SDLWrapper& sdl
 	)
 	{
-		// set the renderer colour to black
-		sdl.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-		// clear the renderer
-		sdl.SDL_RenderClear(renderer);
 
 		draw_grid(colour_buffer, display_mode, line_colour, bg_colour, grid_on);
 
-		draw_rect(colour_buffer, display_mode, rect_start_x, rect_start_y, rect_width, rect_height, rect_colour);
+		for (const vector::Vector2d& point : projected_points)
+		{
+
+			draw_rect(
+				colour_buffer,
+				display_mode,
+				point.get_x() + (display_mode->w / 2),
+				point.get_y() + (display_mode->h / 2),
+				4, 
+				4, 
+				0xFFFFFF00
+			);
+		}
 
 		// render the colour buffer
 		render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer, sdl);
