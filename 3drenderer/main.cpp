@@ -14,9 +14,15 @@ void update(
 	std::vector<vector::Vector2d>& projected_points,
 	double fov_factor,
 	vector::Vector3d& camera_position,
-	vector::Vector3d& cube_rotation
+	vector::Vector3d& cube_rotation,
+	int& previous_frame_time,
+	SDLWrapper& sdl
 )
 {
+	while (!SDL_TICKS_PASSED(sdl.SDL_GetTicks(), previous_frame_time + display::FRAME_TARGET_TIME));
+
+	previous_frame_time = sdl.SDL_GetTicks();
+
 	projected_points = {};
 	double cam_z{ camera_position.get_z() };
 	cube_rotation.set_x(cube_rotation.get_x() + 0.01);
@@ -69,10 +75,11 @@ int main(int argc, char* argv[])
 	double fov_factor{ 640.0 };
 	vector::Vector3d camera_postion{ 0.0, 0.0, -5.0 };
 	vector::Vector3d cube_rotation{ 0.0, 0.0, 0.0 };
+	int previous_frame_time{ 0 };
 	while (is_running)
 	{
 		input.process(is_running, event, sdl);
-		update(cube_points, projected_points, fov_factor, camera_postion, cube_rotation);
+		update(cube_points, projected_points, fov_factor, camera_postion, cube_rotation, previous_frame_time, sdl);
 		display.render(
 			renderer,
 			colour_buffer_texture,

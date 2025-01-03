@@ -11,6 +11,8 @@
 
 namespace display
 {
+	inline int FPS{ 30 };
+	inline double FRAME_TARGET_TIME(1000 / FPS);
 	class Display
 	{
 	public:

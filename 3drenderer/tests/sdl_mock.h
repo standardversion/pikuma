@@ -15,6 +15,7 @@ public:
 	MOCK_METHOD(void, SDL_DestroyRenderer, (SDL_Renderer* renderer), (override));
 	MOCK_METHOD(void, SDL_DestroyWindow, (SDL_Window* window), (override));
 	MOCK_METHOD(int, SDL_GetCurrentDisplayMode, (int index, SDL_DisplayMode* display_mode), (override));
+	MOCK_METHOD(Uint32, SDL_GetTicks, (), (override));
 	MOCK_METHOD(int, SDL_Init, (Uint32 flags), (override));
 	MOCK_METHOD(int, SDL_PollEvent, (SDL_Event* event), (override));
 	MOCK_METHOD(void, SDL_Quit, (), (override));

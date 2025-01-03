@@ -39,6 +39,11 @@ public:
 		return ::SDL_GetCurrentDisplayMode(index, display_mode);
 	}
 
+	virtual Uint32 SDL_GetTicks()
+	{
+		return ::SDL_GetTicks();
+	}
+
 	virtual int SDL_Init(Uint32 flags)
 	{
 		return ::SDL_Init(flags);
