@@ -45,6 +45,26 @@ namespace display
 		}
 	}
 
+	void Display::draw_line(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, std::uint32_t colour)
+	{
+		int delta_x{ x1 - x0 };
+		int delta_y{ y1 - y0 };
+
+		int side_length = abs(delta_x) >= abs(delta_y) ? abs(delta_x) : abs(delta_y);
+		// Find out how much we should increment in x and y in each iteration
+		double x_increment = delta_x / static_cast<double>(side_length);
+		double y_increment = delta_y / static_cast<double>(side_length);
+
+		double current_x{ static_cast<double>(x0) };
+		double current_y{ static_cast<double>(y0) };
+		for (int i{ 0 }; i <= side_length; i++)
+		{
+			draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), colour);
+			current_x += x_increment;
+			current_y += y_increment;
+		}
+	}
+
 	void Display::draw_pixel(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int x, int y, std::uint32_t colour)
 	{
 		if (x >= 0 && x < display_mode->w && y>= 0 &&  y < display_mode->h)
@@ -63,6 +83,37 @@ namespace display
 				draw_pixel(colour_buffer, display_mode, start_x + i, start_y + j, colour);
 			}
 		}
+	}
+
+	void Display::draw_triangle(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, const tri::triangle_t& triangle, std::uint32_t colour)
+	{
+		draw_line(
+			colour_buffer,
+			display_mode,
+			triangle.points[0].get_x(),
+			triangle.points[0].get_y(),
+			triangle.points[1].get_x(),
+			triangle.points[1].get_y(),
+			colour
+		);
+		draw_line(
+			colour_buffer,
+			display_mode,
+			triangle.points[0].get_x(),
+			triangle.points[0].get_y(),
+			triangle.points[2].get_x(),
+			triangle.points[2].get_y(),
+			colour
+		);
+		draw_line(
+			colour_buffer,
+			display_mode,
+			triangle.points[1].get_x(),
+			triangle.points[1].get_y(),
+			triangle.points[2].get_x(),
+			triangle.points[2].get_y(),
+			colour
+		);
 	}
 
 	bool Display::initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, SDLWrapper& sdl)

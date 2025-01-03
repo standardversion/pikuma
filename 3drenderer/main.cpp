@@ -82,6 +82,13 @@ void render(
 
 	for (const auto& triangle : triangles_to_render)
 	{
+		
+		display.draw_triangle(
+			colour_buffer,
+			display_mode,
+			triangle,
+			line_colour
+		);
 
 		for (const auto& point : triangle.points)
 		{
@@ -90,8 +97,8 @@ void render(
 				display_mode,
 				point.get_x(),
 				point.get_y(),
-				4,
-				4,
+				2,
+				2,
 				0xFFFFFF00
 			);
 		}

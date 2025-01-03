@@ -87,6 +87,32 @@ namespace display_tests
 		expected_colour_buffer = nullptr;
 	}
 
+	TEST(display_test, draw_line_success)
+	{
+		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
+		std::uint32_t ln{ 0xFFFFFFFF };
+		class MockDisplay : public display::Display
+		{
+		public:
+			MOCK_METHOD(void, draw_pixel, (std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int x, int y, std::uint32_t colour), (override));
+		};
+		MockDisplay mock_dsp;
+		EXPECT_CALL(mock_dsp, draw_pixel(colour_buffer, &display_mode, 1, 1, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_pixel(colour_buffer, &display_mode, 2, 2, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_pixel(colour_buffer, &display_mode, 3, 3, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_pixel(colour_buffer, &display_mode, 4, 4, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_pixel(colour_buffer, &display_mode, 5, 5, ln))
+			.Times(1);
+
+		mock_dsp.draw_line(colour_buffer, &display_mode, 1, 1, 5, 5, ln);
+		delete[] colour_buffer;
+		colour_buffer = nullptr;
+	}
+
 	TEST(display_test, draw_pixel_within_window)
 	{
 		display_mode.w = 5;
@@ -180,7 +206,35 @@ namespace display_tests
 		colour_buffer = nullptr;
 		delete[] expected_colour_buffer;
 		expected_colour_buffer = nullptr;
+	}
 
+	TEST(display_test, draw_triangle_success)
+	{
+		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
+		std::uint32_t ln{ 0xFFFFFFFF };
+		tri::triangle_t triangle{
+			std::vector<vector::Vector2d> {
+				{1.0, 2.0},
+				{10.0, 2.0},
+				{10.0, 5.0}
+			}
+		};
+		class MockDisplay : public display::Display
+		{
+		public:
+			MOCK_METHOD(void, draw_line, (std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, std::uint32_t colour), (override));
+		};
+		MockDisplay mock_dsp;
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 1.0, 2.0, 10.0, 2.0, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 1.0, 2.0, 10.0, 5.0, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 10.0, 2.0, 10.0, 5.0, ln))
+			.Times(1);
+
+		mock_dsp.draw_triangle(colour_buffer, &display_mode, triangle, ln);
+		delete[] colour_buffer;
+		colour_buffer = nullptr;
 	}
 
 	TEST(display_test, initialize_window_sdl_init_fail)

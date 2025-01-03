@@ -68,5 +68,7 @@ namespace vector
 		//     -----         -----
 		//       Pz           Pz
 		return Vector2d{ (m_x * fov_factor) / m_z, (m_y * fov_factor) / m_z };
+		// ortho projection:
+		//return Vector2d{ (m_x * fov_factor), (m_y * fov_factor) };
 	}
 }
