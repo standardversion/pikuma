@@ -12,6 +12,7 @@ public:
 	MOCK_METHOD(SDL_Renderer*, SDL_CreateRenderer, (SDL_Window* window, int index, Uint32 flags), (override));
 	MOCK_METHOD(SDL_Texture*, SDL_CreateTexture, (SDL_Renderer* renderer, Uint32 format, int access, int w, int h), (override));
 	MOCK_METHOD(SDL_Window*, SDL_CreateWindow, (const char* title, int x, int y, int w, int h, Uint32 flags), (override));
+	MOCK_METHOD(void, SDL_Delay, (Uint32 ms), (override));
 	MOCK_METHOD(void, SDL_DestroyRenderer, (SDL_Renderer* renderer), (override));
 	MOCK_METHOD(void, SDL_DestroyWindow, (SDL_Window* window), (override));
 	MOCK_METHOD(int, SDL_GetCurrentDisplayMode, (int index, SDL_DisplayMode* display_mode), (override));

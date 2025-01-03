@@ -19,7 +19,11 @@ void update(
 	SDLWrapper& sdl
 )
 {
-	while (!SDL_TICKS_PASSED(sdl.SDL_GetTicks(), previous_frame_time + display::FRAME_TARGET_TIME));
+	int time_to_wait = display::FRAME_TARGET_TIME - (sdl.SDL_GetTicks() - previous_frame_time);
+	if (time_to_wait > 0 && time_to_wait <= display::FRAME_TARGET_TIME)
+	{
+		sdl.SDL_Delay(time_to_wait);
+	}
 
 	previous_frame_time = sdl.SDL_GetTicks();
 

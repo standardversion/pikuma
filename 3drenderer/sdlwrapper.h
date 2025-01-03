@@ -24,6 +24,11 @@ public:
 		return ::SDL_CreateWindow(title, x, y, w, h, flags);
 	}
 
+	virtual void SDL_Delay(Uint32 ms)
+	{
+		::SDL_Delay(ms);
+	}
+
 	virtual void SDL_DestroyRenderer(SDL_Renderer* renderer)
 	{
 		::SDL_DestroyRenderer(renderer);
