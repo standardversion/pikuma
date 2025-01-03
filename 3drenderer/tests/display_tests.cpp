@@ -251,50 +251,6 @@ namespace display_tests
 		EXPECT_EQ(initialized, true);
 	}
 
-	TEST(display_test, render_success)
-	{
-		class MockDisplay : public display::Display
-		{
-		public:
-			MOCK_METHOD(void, clear_colour_buffer, (std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, std::uint32_t colour), (override));
-			MOCK_METHOD(void, draw_grid, (std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, std::uint32_t line_colour, std::uint32_t bg_colour, int grid_on), (override));
-			MOCK_METHOD(void, draw_rect, (std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, std::uint32_t colour), (override));
-			MOCK_METHOD(void, render_colour_buffer, (SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, SDL_Renderer*& renderer, SDLWrapper& sdl), (override));
-		};
-		MockDisplay mock_dsp;
-		std::uint32_t bg{ 0x00000000 };
-		std::uint32_t ln{ 0xFFFFFFFF };
-		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
-		display_mode.w = 4;
-		display_mode.h = 4;
-		std::vector<vector::Vector2d> projected_points{ vector::Vector2d{2.0, 2.0} };
-		EXPECT_CALL(mock_dsp, draw_grid(colour_buffer, &display_mode, ln, bg, 1))
-			.WillOnce(::testing::Return());
-		EXPECT_CALL(mock_dsp, draw_rect(colour_buffer, &display_mode, 4, 4, 4, 4, ::testing::_))
-			.WillOnce(::testing::Return());
-		// this causes compilation error if mock_sdl is passed instead of ::testing::_
-		EXPECT_CALL(mock_dsp, render_colour_buffer(colour_buffer_texture, colour_buffer, &display_mode, renderer, ::testing::_))
-			.WillOnce(::testing::Return());
-		EXPECT_CALL(mock_dsp, clear_colour_buffer(colour_buffer, &display_mode, bg))
-			.WillOnce(::testing::Return());
-		EXPECT_CALL(mock_sdl, SDL_RenderPresent(renderer))
-			.WillOnce(::testing::Return());
-
-		mock_dsp.render(
-			renderer,
-			colour_buffer_texture,
-			colour_buffer,
-			&display_mode,
-			ln,
-			bg,
-			1,
-			projected_points,
-			mock_sdl
-		);
-		delete[] colour_buffer;
-		colour_buffer = nullptr;
-	}
-
 	TEST(display_test, render_colour_buffer_success)
 	{
 		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };

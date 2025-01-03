@@ -109,45 +109,6 @@ namespace display
 		return true;
 	}
 
-	void Display::render(
-		SDL_Renderer*& renderer,
-		SDL_Texture*& colour_buffer_texture,
-		std::uint32_t*& colour_buffer,
-		SDL_DisplayMode* display_mode,
-		std::uint32_t line_colour,
-		std::uint32_t bg_colour,
-		int grid_on,
-		std::vector<vector::Vector2d>& projected_points,
-		SDLWrapper& sdl
-	)
-	{
-
-		draw_grid(colour_buffer, display_mode, line_colour, bg_colour, grid_on);
-
-		for (const vector::Vector2d& point : projected_points)
-		{
-
-			draw_rect(
-				colour_buffer,
-				display_mode,
-				point.get_x() + (display_mode->w / 2),
-				point.get_y() + (display_mode->h / 2),
-				4, 
-				4, 
-				0xFFFFFF00
-			);
-		}
-
-		// render the colour buffer
-		render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer, sdl);
-		// fill the colour buffer with a colour value
-		clear_colour_buffer(colour_buffer, display_mode, bg_colour);
-
-		// Update the screen with any rendering performed since the previous call.
-		sdl.SDL_RenderPresent(renderer);
-
-	}
-
 	void Display::render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, SDL_Renderer*& renderer, SDLWrapper& sdl)
 	{
 		// update the texture with the contents of the colour buffer
