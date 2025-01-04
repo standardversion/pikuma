@@ -212,7 +212,7 @@ namespace display_tests
 	{
 		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
 		std::uint32_t ln{ 0xFFFFFFFF };
-		tri::triangle_t triangle{
+		geo::triangle_t triangle{
 			std::vector<vector::Vector2d> {
 				{1.0, 2.0},
 				{10.0, 2.0},

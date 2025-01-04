@@ -85,7 +85,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const tri::triangle_t& triangle, const std::uint32_t colour) const
+	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::triangle_t& triangle, const std::uint32_t colour) const
 	{
 		draw_line(
 			colour_buffer,

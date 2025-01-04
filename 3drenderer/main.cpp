@@ -12,8 +12,8 @@
 #include "triangle.h"
 
 void update(
-	mesh::Mesh& mesh_to_render,
-	std::vector<tri::triangle_t>& triangles_to_render,
+	geo::Mesh& mesh_to_render,
+	std::vector<geo::triangle_t>& triangles_to_render,
 	const double fov_factor,
 	const vector::Vector3d& camera_position,
 	const SDL_DisplayMode* display_mode,
@@ -44,7 +44,7 @@ void update(
 			mesh_to_render.m_vertices[face.c - 1]
 		};
 		//loop through each vertex and project the points of those faces
-		tri::triangle_t projected_triangle{};
+		geo::triangle_t projected_triangle{};
 		std::size_t counter{ 0 };
 		for (const auto& vertex : face_vertices)
 		{
@@ -73,7 +73,7 @@ void render(
 	const std::uint32_t line_colour,
 	const std::uint32_t bg_colour,
 	const int grid_on,
-	const std::vector<tri::triangle_t>& triangles_to_render,
+	const std::vector<geo::triangle_t>& triangles_to_render,
 	const SDLWrapper& sdl
 )
 {
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
 	constexpr const std::uint32_t line_colour{ 0xFFFFFFFF };
 	constexpr const std::uint32_t rect_colour{ 0xFFFFFF00 };
 
-	std::vector<tri::triangle_t> triangles_to_render{};
+	std::vector<geo::triangle_t> triangles_to_render{};
 	SDL_Event event{};
 	constexpr const double fov_factor{ 640.0 };
 	const vector::Vector3d camera_postion{ 0.0, 0.0, -5.0 };
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 		{ -1, 1, 1 }, //7
 		{ -1, -1, 1 } //8
 	};
-	std::vector<tri::face_t> cube_faces{
+	std::vector<geo::face_t> cube_faces{
 		//front
 		{ 1, 2, 3 },
 		{ 1, 3, 4 },
@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
 		{ 6, 8, 1 },
 		{ 6, 1, 4 }
 	};
-	mesh::Mesh cube{cube_vertices, cube_faces};
+	geo::Mesh cube{cube_vertices, cube_faces};
 	while (is_running)
 	{
 		input.process(is_running, event, sdl);

@@ -1,12 +1,12 @@
 #include "mesh.h"
 
-namespace mesh
+namespace geo
 {
 	Mesh::Mesh()
 	{
 	}
 
-	Mesh::Mesh(const std::vector<vector::Vector3d>& vertices, const std::vector<tri::face_t>& faces)
+	Mesh::Mesh(const std::vector<vector::Vector3d>& vertices, const std::vector<geo::face_t>& faces)
 		: m_vertices{ vertices }, m_faces{ faces }
 	{
 	}

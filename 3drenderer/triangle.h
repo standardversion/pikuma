@@ -2,7 +2,7 @@
 #include "vector"
 #include "vector2d.h"
 
-namespace tri
+namespace geo
 {
 	struct face_t
 	{
