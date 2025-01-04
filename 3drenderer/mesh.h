@@ -5,35 +5,20 @@
 
 namespace mesh
 {
-	inline std::vector<vector::Vector3d> mesh_vertices{
-		{ -1, -1, -1 }, //1
-		{ -1, 1, -1 }, //2
-		{ 1, 1, -1 }, //3
-		{ 1, -1, -1 }, //4
-		{ 1, 1, 1 }, //5
-		{ 1, -1, 1 }, //6
-		{ -1, 1, 1 }, //7
-		{ -1, -1, 1 } //8
-	};
-
-	inline std::vector<tri::face_t> mesh_faces{
-		//front
-		{ 1, 2, 3 },
-		{ 1, 3, 4 },
-		//right
-		{ 4, 3, 5 },
-		{ 4, 5, 6 },
-		//back
-		{ 6, 5, 7 },
-		{ 6, 7, 8 },
-		//left
-		{ 8, 7, 2 },
-		{ 8, 2, 1 },
-		//top
-		{ 2, 7, 5 },
-		{ 2, 5, 3 },
-		//bottom
-		{ 6, 8, 1 },
-		{ 6, 1, 4 }
+	class Mesh
+	{
+	public:
+		Mesh();
+		Mesh(std::vector<vector::Vector3d> vertices, std::vector<tri::face_t> faces);
+		const std::vector<vector::Vector3d>& get_vertices() const;
+		const std::vector<tri::face_t>& get_faces() const;
+		const vector::Vector3d& get_rotation() const;
+		vector::Vector3d& get_rotation();
+		void push_vertex(vector::Vector3d vertex);
+		void push_face(tri::face_t face);
+	private:
+		std::vector<vector::Vector3d> m_vertices{};
+		std::vector<tri::face_t> m_faces{};
+		vector::Vector3d m_rotation{ 0.0, 0.0, 0.0 };
 	};
 }

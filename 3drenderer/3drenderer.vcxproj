@@ -158,6 +158,7 @@
     <ClCompile Include="display.cpp" />
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="mesh.cpp" />
     <ClCompile Include="vector2d.cpp" />
     <ClCompile Include="vector3d.cpp" />
   </ItemGroup>
