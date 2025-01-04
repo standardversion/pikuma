@@ -2,7 +2,7 @@
 
 namespace input
 {
-	void Input::process(bool& is_running, SDL_Event& event, SDLWrapper& sdl)
+	void Input::process(bool& is_running, SDL_Event& event, const SDLWrapper& sdl) const
 	{
 		
 		sdl.SDL_PollEvent(&event);

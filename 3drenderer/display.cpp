@@ -2,7 +2,7 @@
 
 namespace display
 {
-	void Display::cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, SDLWrapper& sdl)
+	void Display::cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, const SDLWrapper& sdl) const
 	{
 		sdl.SDL_DestroyRenderer(renderer);
 		sdl.SDL_DestroyWindow(window);
@@ -14,7 +14,7 @@ namespace display
 		colour_buffer = nullptr;
 	}
 
-	void Display::clear_colour_buffer(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, std::uint32_t colour)
+	void Display::clear_colour_buffer(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const
 	{
 		// our 2d pixels (x * y) are laid out in a 1d array
 		// so for example, if we're dealing with 1920x1080 the first 1920 indices for the array
@@ -31,7 +31,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_grid(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, std::uint32_t line_colour, std::uint32_t bg_colour, int grid_on)
+	void Display::draw_grid(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on) const
 	{
 		for (int y{ 0 }; y < display_mode->h; y++)
 		{
@@ -45,7 +45,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_line(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, std::uint32_t colour)
+	void Display::draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour) const
 	{
 		int delta_x{ x1 - x0 };
 		int delta_y{ y1 - y0 };
@@ -65,7 +65,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_pixel(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int x, int y, std::uint32_t colour)
+	void Display::draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour) const
 	{
 		if (x >= 0 && x < display_mode->w && y>= 0 &&  y < display_mode->h)
 		{
@@ -74,7 +74,7 @@ namespace display
 		
 	}
 
-	void Display::draw_rect(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, std::uint32_t colour)
+	void Display::draw_rect(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, const std::uint32_t colour) const
 	{
 		for (int i{ 0 }; i < width; i++)
 		{
@@ -85,38 +85,38 @@ namespace display
 		}
 	}
 
-	void Display::draw_triangle(std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, const tri::triangle_t& triangle, std::uint32_t colour)
+	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const tri::triangle_t& triangle, const std::uint32_t colour) const
 	{
 		draw_line(
 			colour_buffer,
 			display_mode,
-			triangle.points[0].get_x(),
-			triangle.points[0].get_y(),
-			triangle.points[1].get_x(),
-			triangle.points[1].get_y(),
+			triangle.points[0].m_x,
+			triangle.points[0].m_y,
+			triangle.points[1].m_x,
+			triangle.points[1].m_y,
 			colour
 		);
 		draw_line(
 			colour_buffer,
 			display_mode,
-			triangle.points[0].get_x(),
-			triangle.points[0].get_y(),
-			triangle.points[2].get_x(),
-			triangle.points[2].get_y(),
+			triangle.points[0].m_x,
+			triangle.points[0].m_y,
+			triangle.points[2].m_x,
+			triangle.points[2].m_y,
 			colour
 		);
 		draw_line(
 			colour_buffer,
 			display_mode,
-			triangle.points[1].get_x(),
-			triangle.points[1].get_y(),
-			triangle.points[2].get_x(),
-			triangle.points[2].get_y(),
+			triangle.points[1].m_x,
+			triangle.points[1].m_y,
+			triangle.points[2].m_x,
+			triangle.points[2].m_y,
 			colour
 		);
 	}
 
-	bool Display::initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, SDLWrapper& sdl)
+	bool Display::initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, const SDLWrapper& sdl) const
 	{
 		// Initialize the SDL library
 		// SDL_INIT_EVERYTHING flag initializes audio, video, controller etc subsystems
@@ -160,7 +160,7 @@ namespace display
 		return true;
 	}
 
-	void Display::render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, SDL_Renderer*& renderer, SDLWrapper& sdl)
+	void Display::render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer, const SDLWrapper& sdl) const
 	{
 		// update the texture with the contents of the colour buffer
 		sdl.SDL_UpdateTexture(
@@ -173,7 +173,7 @@ namespace display
 		sdl.SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
 	}
 
-	bool Display::setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode, SDLWrapper& sdl)
+	bool Display::setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode, const SDLWrapper& sdl) const
 	{
 		// first create the window and rendering context
 		bool initialized = initialize_window(window, renderer, displaymode, sdl);

@@ -94,7 +94,7 @@ namespace display_tests
 		class MockDisplay : public display::Display
 		{
 		public:
-			MOCK_METHOD(void, draw_pixel, (std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int x, int y, std::uint32_t colour), (override));
+			MOCK_METHOD(void, draw_pixel, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour), (const, override));
 		};
 		MockDisplay mock_dsp;
 		EXPECT_CALL(mock_dsp, draw_pixel(colour_buffer, &display_mode, 1, 1, ln))
@@ -222,7 +222,7 @@ namespace display_tests
 		class MockDisplay : public display::Display
 		{
 		public:
-			MOCK_METHOD(void, draw_line, (std::uint32_t*& colour_buffer, SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, std::uint32_t colour), (override));
+			MOCK_METHOD(void, draw_line, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour), (const, override));
 		};
 		MockDisplay mock_dsp;
 		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 1.0, 2.0, 10.0, 2.0, ln))
@@ -323,7 +323,7 @@ namespace display_tests
 		class MockDisplay : public display::Display
 		{
 		public:
-			MOCK_METHOD(bool, initialize_window, (SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, SDLWrapper& sdl), (override));
+			MOCK_METHOD(bool, initialize_window, (SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, const SDLWrapper& sdl), (const, override));
 		};
 		MockDisplay mock_dsp;
 		EXPECT_CALL(mock_dsp, initialize_window(window, renderer, &display_mode, ::testing::_))
@@ -338,7 +338,7 @@ namespace display_tests
 		class MockDisplay : public display::Display
 		{
 		public:
-			MOCK_METHOD(bool, initialize_window, (SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, SDLWrapper& sdl), (override));
+			MOCK_METHOD(bool, initialize_window, (SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, const SDLWrapper& sdl), (const, override));
 		};
 		MockDisplay mock_dsp;
 		EXPECT_CALL(mock_dsp, initialize_window(window, renderer, &display_mode, ::testing::_))
