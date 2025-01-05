@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
 	constexpr const double fov_factor{ 640.0 };
 	const vector::Vector3d camera_postion{ 0.0, 0.0, -5.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh(".\\assets\\monkey.obj");
+	geo::Mesh mesh{ ".\\assets\\monkey.obj" };
 	while (is_running)
 	{
 		input.process(is_running, event, sdl);
