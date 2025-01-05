@@ -159,6 +159,7 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mesh.cpp" />
+    <ClCompile Include="utils.cpp" />
     <ClCompile Include="vector2d.cpp" />
     <ClCompile Include="vector3d.cpp" />
   </ItemGroup>
@@ -168,6 +169,7 @@
     <ClInclude Include="mesh.h" />
     <ClInclude Include="sdlwrapper.h" />
     <ClInclude Include="triangle.h" />
+    <ClInclude Include="utils.h" />
     <ClInclude Include="vector2d.h" />
     <ClInclude Include="vector3d.h" />
   </ItemGroup>

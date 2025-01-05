@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include <string>
 #include "display.h"
 #include "input.h"
 #include "sdlwrapper.h"
@@ -10,6 +11,7 @@
 #include "vector2d.h"
 #include "mesh.h"
 #include "triangle.h"
+#include "utils.h"
 
 void update(
 	geo::Mesh& mesh_to_render,
@@ -31,9 +33,9 @@ void update(
 
 	triangles_to_render = {};
 
-	mesh_to_render.m_rotation.m_x += 0.01;
+	//mesh_to_render.m_rotation.m_x += 0.01;
 	mesh_to_render.m_rotation.m_y += 0.01;
-	mesh_to_render.m_rotation.m_z += 0.01;
+	//mesh_to_render.m_rotation.m_z += 0.01;
 	for (const auto& face : mesh_to_render.m_faces)
 	{
 		//each mesh face has 3 vertices stored as the index of the vertex in mesh_vertices
@@ -136,41 +138,11 @@ int main(int argc, char* argv[])
 	constexpr const double fov_factor{ 640.0 };
 	const vector::Vector3d camera_postion{ 0.0, 0.0, -5.0 };
 	int previous_frame_time{ 0 };
-	std::vector<vector::Vector3d> cube_vertices{
-		{ -1, -1, -1 }, //1
-		{ -1, 1, -1 }, //2
-		{ 1, 1, -1 }, //3
-		{ 1, -1, -1 }, //4
-		{ 1, 1, 1 }, //5
-		{ 1, -1, 1 }, //6
-		{ -1, 1, 1 }, //7
-		{ -1, -1, 1 } //8
-	};
-	std::vector<geo::face_t> cube_faces{
-		//front
-		{ 1, 2, 3 },
-		{ 1, 3, 4 },
-		//right
-		{ 4, 3, 5 },
-		{ 4, 5, 6 },
-		//back
-		{ 6, 5, 7 },
-		{ 6, 7, 8 },
-		//left
-		{ 8, 7, 2 },
-		{ 8, 2, 1 },
-		//top
-		{ 2, 7, 5 },
-		{ 2, 5, 3 },
-		//bottom
-		{ 6, 8, 1 },
-		{ 6, 1, 4 }
-	};
-	geo::Mesh cube{cube_vertices, cube_faces};
+	geo::Mesh mesh(".\\assets\\monkey.obj");
 	while (is_running)
 	{
 		input.process(is_running, event, sdl);
-		update(cube, triangles_to_render, fov_factor, camera_postion, &display_mode, previous_frame_time, sdl);
+		update(mesh, triangles_to_render, fov_factor, camera_postion, &display_mode, previous_frame_time, sdl);
 		render(
 			display,
 			renderer,
