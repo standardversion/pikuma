@@ -33,9 +33,9 @@ void update(
 
 	triangles_to_render = {};
 
-	//mesh_to_render.m_rotation.m_x += 0.01;
+	mesh_to_render.m_rotation.m_x += 0.01;
 	mesh_to_render.m_rotation.m_y += 0.01;
-	//mesh_to_render.m_rotation.m_z += 0.01;
+	mesh_to_render.m_rotation.m_z += 0.01;
 	for (const auto& face : mesh_to_render.m_faces)
 	{
 		//each mesh face has 3 vertices stored as the index of the vertex in mesh_vertices
@@ -47,7 +47,8 @@ void update(
 		};
 		//loop through each vertex and project the points of those faces
 		geo::triangle_t projected_triangle{};
-		std::size_t counter{ 0 };
+		std::vector<vector::Vector3d> transformed_vertices{};
+		// apply transformations
 		for (const auto& vertex : face_vertices)
 		{
 			vector::Vector3d point{ vertex };
@@ -56,8 +57,36 @@ void update(
 			point.rotate_y(mesh_to_render.m_rotation.m_y);
 			point.rotate_z(mesh_to_render.m_rotation.m_z);
 			// move pionts away from camera
-			point.m_z -= camera_position.m_z;
-			vector::Vector2d projected_point{ point.project(fov_factor) };
+			point.m_z += 5.0;
+			transformed_vertices.push_back(point);
+		}
+		// check backface culling
+		vector::Vector3d vector_a{ transformed_vertices[0] };  /*   A   */
+		vector::Vector3d vector_b{ transformed_vertices[1] };  /*  / \  */
+		vector::Vector3d vector_c{ transformed_vertices[2] };  /* C---B */
+		// get vector subtraction of B-A and C-A
+		vector::Vector3d vector_ab{ vector_b - vector_a };
+		vector::Vector3d vector_ac{ vector_c - vector_a };
+		vector_ab.normalize();
+		vector_ac.normalize();
+		// compute the normal at the vertex (using cross product to find perpendicular)
+		// order of the cross product depends on the coordinate system
+		// since this is a left handed system our order of cross product is ab x ac
+		vector::Vector3d normal{ vector_ab.cross_product(vector_ac) };
+		normal.normalize();
+		// find the camera ray ie the vector between a point in the triangle and the camera origin
+		vector::Vector3d camera_ray{ camera_position - vector_a };
+
+		// calculate how aligned the camera ray is with the face normal (using dot product)
+		if (camera_ray.dot_product(normal) < 0)
+		{
+			continue;
+		}
+		// project the point
+		std::size_t counter{ 0 };
+		for (const auto& vertex : transformed_vertices)
+		{
+			vector::Vector2d projected_point{ vertex.project(fov_factor) };
 			projected_point.m_x += display_mode->w / 2;
 			projected_point.m_y += display_mode->h / 2;
 			projected_triangle.points[counter++] = projected_point;
@@ -136,7 +165,7 @@ int main(int argc, char* argv[])
 	std::vector<geo::triangle_t> triangles_to_render{};
 	SDL_Event event{};
 	constexpr const double fov_factor{ 640.0 };
-	const vector::Vector3d camera_postion{ 0.0, 0.0, -5.0 };
+	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
 	geo::Mesh mesh{ ".\\assets\\monkey.obj" };
 	while (is_running)
