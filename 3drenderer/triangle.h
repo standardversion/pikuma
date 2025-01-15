@@ -11,10 +11,12 @@ namespace geo
 		int c;
 	};
 
-	struct triangle_t
+	class Triangle
 	{
-		//direct (parenthesis) initialization is disallowed for member default initializers.
-		//std::vector<vector::Vector2d> points(3) won't work
-		std::vector<vector::Vector2d> points{ std::vector<vector::Vector2d>(3) };
+	public:
+		Triangle();
+		Triangle(std::vector<vector::Vector2d>& points);
+
+		std::vector<vector::Vector2d> m_points;
 	};
 }

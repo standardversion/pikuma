@@ -15,7 +15,7 @@
 
 void update(
 	geo::Mesh& mesh_to_render,
-	std::vector<geo::triangle_t>& triangles_to_render,
+	std::vector<geo::Triangle>& triangles_to_render,
 	const double fov_factor,
 	const vector::Vector3d& camera_position,
 	const SDL_DisplayMode* display_mode,
@@ -46,7 +46,7 @@ void update(
 			mesh_to_render.m_vertices[face.c - 1]
 		};
 		//loop through each vertex and project the points of those faces
-		geo::triangle_t projected_triangle{};
+		geo::Triangle projected_triangle{};
 		std::vector<vector::Vector3d> transformed_vertices{};
 		// apply transformations
 		for (const auto& vertex : face_vertices)
@@ -89,7 +89,7 @@ void update(
 			vector::Vector2d projected_point{ vertex.project(fov_factor) };
 			projected_point.m_x += display_mode->w / 2;
 			projected_point.m_y += display_mode->h / 2;
-			projected_triangle.points[counter++] = projected_point;
+			projected_triangle.m_points.push_back(projected_point);
 		}
 		triangles_to_render.push_back(projected_triangle);
 	}
@@ -104,7 +104,7 @@ void render(
 	const std::uint32_t line_colour,
 	const std::uint32_t bg_colour,
 	const int grid_on,
-	const std::vector<geo::triangle_t>& triangles_to_render,
+	const std::vector<geo::Triangle>& triangles_to_render,
 	const SDLWrapper& sdl
 )
 {
@@ -121,7 +121,7 @@ void render(
 			line_colour
 		);
 
-		for (const auto& point : triangle.points)
+		for (const auto& point : triangle.m_points)
 		{
 			display.draw_rect(
 				colour_buffer,
@@ -135,6 +135,19 @@ void render(
 		}
 
 	}
+
+	/**geo::Triangle ren_tri{};
+	ren_tri.m_points.push_back(vector::Vector2d{ 300, 100 });
+	ren_tri.m_points.push_back(vector::Vector2d{ 50, 400 });
+	ren_tri.m_points.push_back(vector::Vector2d{ 500, 700 });
+
+	display.draw_triangle(
+		colour_buffer,
+		display_mode,
+		ren_tri,
+		line_colour
+	);*/
+
 
 	// render the colour buffer
 	display.render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer, sdl);
@@ -162,7 +175,7 @@ int main(int argc, char* argv[])
 	constexpr const std::uint32_t line_colour{ 0xFFFFFFFF };
 	constexpr const std::uint32_t rect_colour{ 0xFFFFFF00 };
 
-	std::vector<geo::triangle_t> triangles_to_render{};
+	std::vector<geo::Triangle> triangles_to_render{};
 	SDL_Event event{};
 	constexpr const double fov_factor{ 640.0 };
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };

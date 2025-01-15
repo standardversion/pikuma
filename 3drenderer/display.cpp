@@ -85,33 +85,33 @@ namespace display
 		}
 	}
 
-	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::triangle_t& triangle, const std::uint32_t colour) const
+	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle& triangle, const std::uint32_t colour) const
 	{
 		draw_line(
 			colour_buffer,
 			display_mode,
-			triangle.points[0].m_x,
-			triangle.points[0].m_y,
-			triangle.points[1].m_x,
-			triangle.points[1].m_y,
+			triangle.m_points[0].m_x,
+			triangle.m_points[0].m_y,
+			triangle.m_points[1].m_x,
+			triangle.m_points[1].m_y,
 			colour
 		);
 		draw_line(
 			colour_buffer,
 			display_mode,
-			triangle.points[0].m_x,
-			triangle.points[0].m_y,
-			triangle.points[2].m_x,
-			triangle.points[2].m_y,
+			triangle.m_points[0].m_x,
+			triangle.m_points[0].m_y,
+			triangle.m_points[2].m_x,
+			triangle.m_points[2].m_y,
 			colour
 		);
 		draw_line(
 			colour_buffer,
 			display_mode,
-			triangle.points[1].m_x,
-			triangle.points[1].m_y,
-			triangle.points[2].m_x,
-			triangle.points[2].m_y,
+			triangle.m_points[1].m_x,
+			triangle.m_points[1].m_y,
+			triangle.m_points[2].m_x,
+			triangle.m_points[2].m_y,
 			colour
 		);
 	}
