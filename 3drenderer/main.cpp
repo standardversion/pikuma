@@ -118,30 +118,6 @@ void render(
 		ren_tri.m_points.push_back(vector::Vector2d<int>{ static_cast<int>(triangle.m_points[1].m_x), static_cast<int>(triangle.m_points[1].m_y) });
 		ren_tri.m_points.push_back(vector::Vector2d<int>{ static_cast<int>(triangle.m_points[2].m_x), static_cast<int>(triangle.m_points[2].m_y) });
 		
-		/*display.draw_filled_triangle(
-			colour_buffer,
-			display_mode,
-			triangle.m_points[0].m_x,
-			triangle.m_points[0].m_y,
-			triangle.m_points[1].m_x,
-			triangle.m_points[1].m_y,
-			triangle.m_points[2].m_x,
-			triangle.m_points[2].m_y,
-			line_colour
-		);*/
-
-		/*display.draw_filled_triangle(
-			colour_buffer,
-			display_mode,
-			ren_tri.m_points[0].m_x,
-			ren_tri.m_points[0].m_y,
-			ren_tri.m_points[1].m_x,
-			ren_tri.m_points[1].m_y,
-			ren_tri.m_points[2].m_x,
-			ren_tri.m_points[2].m_y,
-			line_colour
-		);*/
-
 		display.fill_triangle(
 			colour_buffer,
 			display_mode,
@@ -162,26 +138,6 @@ void render(
 			);
 		}
 	}
-
-	/*geo::Triangle ren_tri{};
-	ren_tri.m_points.push_back(vector::Vector2d{ 300, 100 });
-	ren_tri.m_points.push_back(vector::Vector2d{ 50, 400 });
-	ren_tri.m_points.push_back(vector::Vector2d{ 500, 700 });
-
-	display.draw_triangle(
-		colour_buffer,
-		display_mode,
-		ren_tri,
-		line_colour
-	);
-
-	display.fill_triangle(
-		colour_buffer,
-		display_mode,
-		ren_tri,
-		line_colour
-	);*/
-
 
 	// render the colour buffer
 	display.render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer, sdl);
