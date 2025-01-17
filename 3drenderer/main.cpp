@@ -15,7 +15,7 @@
 
 void update(
 	geo::Mesh& mesh_to_render,
-	std::vector<geo::Triangle>& triangles_to_render,
+	std::vector<geo::Triangle<double>>& triangles_to_render,
 	const double fov_factor,
 	const vector::Vector3d& camera_position,
 	const SDL_DisplayMode* display_mode,
@@ -46,7 +46,7 @@ void update(
 			mesh_to_render.m_vertices[face.c - 1]
 		};
 		//loop through each vertex and project the points of those faces
-		geo::Triangle projected_triangle{};
+		geo::Triangle<double> projected_triangle{ };
 		std::vector<vector::Vector3d> transformed_vertices{};
 		// apply transformations
 		for (const auto& vertex : face_vertices)
@@ -86,7 +86,7 @@ void update(
 		std::size_t counter{ 0 };
 		for (const auto& vertex : transformed_vertices)
 		{
-			vector::Vector2d projected_point{ vertex.project(fov_factor) };
+			vector::Vector2d<double> projected_point{ vertex.project(fov_factor) };
 			projected_point.m_x += display_mode->w / 2;
 			projected_point.m_y += display_mode->h / 2;
 			projected_triangle.m_points.push_back(projected_point);
@@ -104,7 +104,7 @@ void render(
 	const std::uint32_t line_colour,
 	const std::uint32_t bg_colour,
 	const int grid_on,
-	const std::vector<geo::Triangle>& triangles_to_render,
+	const std::vector<geo::Triangle<double>>& triangles_to_render,
 	const SDLWrapper& sdl
 )
 {
@@ -113,11 +113,39 @@ void render(
 
 	for (const auto& triangle : triangles_to_render)
 	{
+		geo::Triangle<int> ren_tri{};
+		ren_tri.m_points.push_back(vector::Vector2d<int>{ static_cast<int>(triangle.m_points[0].m_x), static_cast<int>(triangle.m_points[0].m_y) });
+		ren_tri.m_points.push_back(vector::Vector2d<int>{ static_cast<int>(triangle.m_points[1].m_x), static_cast<int>(triangle.m_points[1].m_y) });
+		ren_tri.m_points.push_back(vector::Vector2d<int>{ static_cast<int>(triangle.m_points[2].m_x), static_cast<int>(triangle.m_points[2].m_y) });
 		
-		display.draw_triangle(
+		/*display.draw_filled_triangle(
 			colour_buffer,
 			display_mode,
-			triangle,
+			triangle.m_points[0].m_x,
+			triangle.m_points[0].m_y,
+			triangle.m_points[1].m_x,
+			triangle.m_points[1].m_y,
+			triangle.m_points[2].m_x,
+			triangle.m_points[2].m_y,
+			line_colour
+		);*/
+
+		/*display.draw_filled_triangle(
+			colour_buffer,
+			display_mode,
+			ren_tri.m_points[0].m_x,
+			ren_tri.m_points[0].m_y,
+			ren_tri.m_points[1].m_x,
+			ren_tri.m_points[1].m_y,
+			ren_tri.m_points[2].m_x,
+			ren_tri.m_points[2].m_y,
+			line_colour
+		);*/
+
+		display.fill_triangle(
+			colour_buffer,
+			display_mode,
+			ren_tri,
 			line_colour
 		);
 
@@ -133,15 +161,21 @@ void render(
 				0xFFFFFF00
 			);
 		}
-
 	}
 
-	/**geo::Triangle ren_tri{};
+	/*geo::Triangle ren_tri{};
 	ren_tri.m_points.push_back(vector::Vector2d{ 300, 100 });
 	ren_tri.m_points.push_back(vector::Vector2d{ 50, 400 });
 	ren_tri.m_points.push_back(vector::Vector2d{ 500, 700 });
 
 	display.draw_triangle(
+		colour_buffer,
+		display_mode,
+		ren_tri,
+		line_colour
+	);
+
+	display.fill_triangle(
 		colour_buffer,
 		display_mode,
 		ren_tri,
@@ -175,12 +209,12 @@ int main(int argc, char* argv[])
 	constexpr const std::uint32_t line_colour{ 0xFFFFFFFF };
 	constexpr const std::uint32_t rect_colour{ 0xFFFFFF00 };
 
-	std::vector<geo::Triangle> triangles_to_render{};
+	std::vector<geo::Triangle<double>> triangles_to_render{};
 	SDL_Event event{};
 	constexpr const double fov_factor{ 640.0 };
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\monkey.obj" };
+	geo::Mesh mesh{ ".\\assets\\cube.obj" };
 	while (is_running)
 	{
 		input.process(is_running, event, sdl);

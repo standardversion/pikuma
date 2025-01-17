@@ -1,4 +1,5 @@
 #include "display.h"
+#include "utils.h"
 
 namespace display
 {
@@ -85,7 +86,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle& triangle, const std::uint32_t colour) const
+	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<double>& triangle, const std::uint32_t colour) const
 	{
 		draw_line(
 			colour_buffer,
@@ -114,6 +115,152 @@ namespace display
 			triangle.m_points[2].m_y,
 			colour
 		);
+	}
+
+	void Display::fill_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	{
+		// sort the triangle by the y component
+		//triangle.sort();
+		int x0{ triangle.m_points[0].m_x };
+		int y0{ triangle.m_points[0].m_y };
+		int x1{ triangle.m_points[1].m_x };
+		int y1{ triangle.m_points[1].m_y };
+		int x2{ triangle.m_points[2].m_x };
+		int y2{ triangle.m_points[2].m_y };
+
+		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
+		if (y0 > y1) {
+			utils::int_swap(&y0, &y1);
+			utils::int_swap(&x0, &x1);
+		}
+		if (y1 > y2) {
+			utils::int_swap(&y1, &y2);
+			utils::int_swap(&x1, &x2);
+		}
+		if (y0 > y1) {
+			utils::int_swap(&y0, &y1);
+			utils::int_swap(&x0, &x1);
+		}
+		geo::Triangle<int> ren_tri{};
+		ren_tri.m_points.push_back(vector::Vector2d<int>{ x0, y0 });
+		ren_tri.m_points.push_back(vector::Vector2d<int>{ x1, y1 });
+		ren_tri.m_points.push_back(vector::Vector2d<int>{ x2, y2 });
+
+		if (y1 == y2)
+		{
+			fill_flat_bottom_triangle(colour_buffer, display_mode, ren_tri, colour);
+		}
+		else if (y0 == y1)
+		{
+			fill_flat_top_triangle(colour_buffer, display_mode, ren_tri, colour);
+		}
+		else {
+			/*vector::Vector2d<int> midpoint{ ren_tri.get_midpoint() };
+			std::vector<vector::Vector2d<int>> flat_bottom_points{ ren_tri.m_points[0], ren_tri.m_points[1], midpoint };
+			geo::Triangle<int> flat_bottom_triangle{ flat_bottom_points };
+			std::vector<vector::Vector2d<int>> flat_top_points{ ren_tri.m_points[1], ren_tri.m_points[2], midpoint };
+			geo::Triangle<int> flat_top_triangle{ flat_top_points };*/
+			int My = y1;
+			int Mx = (((x2 - x0) * (y1 - y0)) / (y2 - y0)) + x0;
+			geo::Triangle<int> flat_bottom_triangle{ };
+			flat_bottom_triangle.m_points.push_back(vector::Vector2d<int>{ x0, y0 });
+			flat_bottom_triangle.m_points.push_back(vector::Vector2d<int>{ x1, y1 });
+			flat_bottom_triangle.m_points.push_back(vector::Vector2d<int>{ Mx, My });
+			geo::Triangle<int> flat_top_triangle{ };
+			flat_top_triangle.m_points.push_back(vector::Vector2d<int>{ x1, y1 });
+			flat_top_triangle.m_points.push_back(vector::Vector2d<int>{ Mx, My });
+			flat_top_triangle.m_points.push_back(vector::Vector2d<int>{ x2, y2 });
+			fill_flat_bottom_triangle(colour_buffer, display_mode, flat_bottom_triangle, colour);
+			fill_flat_top_triangle(colour_buffer, display_mode, flat_top_triangle, colour);
+		}
+	}
+
+	void Display::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	{
+		//float x_start_slope{ triangle.get_inverse_slope(1, 0) };
+		//float x_end_slope{ triangle.get_inverse_slope(2, 0) };
+		/*float x_start_slope = (float)(triangle.m_points[1].m_x - triangle.m_points[0].m_x) / (triangle.m_points[1].m_y - triangle.m_points[0].m_y);
+		float x_end_slope = (float)(triangle.m_points[2].m_x - triangle.m_points[0].m_x) / (triangle.m_points[2].m_y - triangle.m_points[0].m_y);
+		float x_start{ static_cast<float>(triangle.m_points[0].m_x) };
+		float x_end{ static_cast<float>(triangle.m_points[0].m_x) };
+		for (int i{ triangle.m_points[0].m_y }; i <= triangle.m_points[1].m_y; i++)
+		{
+			draw_line(
+				colour_buffer,
+				display_mode,
+				x_start,
+				i,
+				x_end,
+				i,
+				colour
+			);
+			x_start += x_start_slope;
+			x_end += x_end_slope;
+		}*/
+		int x0{ triangle.m_points[0].m_x };
+		int y0{ triangle.m_points[0].m_y };
+		int x1{ triangle.m_points[1].m_x };
+		int y1{ triangle.m_points[1].m_y };
+		int x2{ triangle.m_points[2].m_x };
+		int y2{ triangle.m_points[2].m_y };
+		// Find the two slopes (two triangle legs)
+		float inv_slope_1 = (float)(x1 - x0) / (y1 - y0);
+		float inv_slope_2 = (float)(x2 - x0) / (y2 - y0);
+
+		// Start x_start and x_end from the top vertex (x0,y0)
+		float x_start = x0;
+		float x_end = x0;
+
+		// Loop all the scanlines from top to bottom
+		for (int y = y0; y <= y2; y++) {
+			draw_line(colour_buffer, display_mode, x_start, y, x_end, y, colour);
+			x_start += inv_slope_1;
+			x_end += inv_slope_2;
+		}
+	}
+
+	void Display::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	{
+		//float x_start_slope{ triangle.get_inverse_slope(1, 0) };
+		//float x_end_slope{ triangle.get_inverse_slope(1, 2) };
+		/*float x_start_slope = (float)(triangle.m_points[1].m_x - triangle.m_points[0].m_x) / (triangle.m_points[1].m_y - triangle.m_points[0].m_y);
+		float x_end_slope = (float)(triangle.m_points[2].m_x - triangle.m_points[1].m_x) / (triangle.m_points[2].m_y - triangle.m_points[1].m_y);
+		float x_start{ static_cast<float>(triangle.m_points[1].m_x) };
+		float x_end{ static_cast<float>(triangle.m_points[1].m_x) };
+		for (int i{ triangle.m_points[1].m_y }; i >= triangle.m_points[2].m_y; i--)
+		{
+			draw_line(
+				colour_buffer,
+				display_mode,
+				x_start,
+				i,
+				x_end,
+				i,
+				colour
+			);
+			x_start -= x_start_slope;
+			x_end -= x_end_slope;
+		}*/
+		int x0{ triangle.m_points[0].m_x };
+		int y0{ triangle.m_points[0].m_y };
+		int x1{ triangle.m_points[1].m_x };
+		int y1{ triangle.m_points[1].m_y };
+		int x2{ triangle.m_points[2].m_x };
+		int y2{ triangle.m_points[2].m_y };
+		// Find the two slopes (two triangle legs)
+		float inv_slope_1 = (float)(x2 - x0) / (y2 - y0);
+		float inv_slope_2 = (float)(x2 - x1) / (y2 - y1);
+
+		// Start x_start and x_end from the bottom vertex (x2,y2)
+		float x_start = x2;
+		float x_end = x2;
+
+		// Loop all the scanlines from bottom to top
+		for (int y = y2; y >= y0; y--) {
+			draw_line(colour_buffer, display_mode, x_start, y, x_end, y, colour);
+			x_start -= inv_slope_1;
+			x_end -= inv_slope_2;
+		}
 	}
 
 	bool Display::initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, const SDLWrapper& sdl) const
@@ -188,5 +335,78 @@ namespace display
 			);
 		}
 		return initialized;
+	}
+
+	void Display::fill_flat_top_tri(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t colour) const
+	{
+		// Find the two slopes (two triangle legs)
+		float inv_slope_1 = (float)(x2 - x0) / (y2 - y0);
+		float inv_slope_2 = (float)(x2 - x1) / (y2 - y1);
+
+		// Start x_start and x_end from the bottom vertex (x2,y2)
+		float x_start = x2;
+		float x_end = x2;
+
+		// Loop all the scanlines from bottom to top
+		for (int y = y2; y >= y0; y--) {
+			draw_line(colour_buffer, display_mode, x_start, y, x_end, y, colour);
+			x_start -= inv_slope_1;
+			x_end -= inv_slope_2;
+		}
+	}
+
+	void Display::fill_flat_bottom_tri(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t colour) const
+	{
+		// Find the two slopes (two triangle legs)
+		float inv_slope_1 = (float)(x1 - x0) / (y1 - y0);
+		float inv_slope_2 = (float)(x2 - x0) / (y2 - y0);
+
+		// Start x_start and x_end from the top vertex (x0,y0)
+		float x_start = x0;
+		float x_end = x0;
+
+		// Loop all the scanlines from top to bottom
+		for (int y = y0; y <= y2; y++) {
+			draw_line(colour_buffer, display_mode, x_start, y, x_end, y, colour);
+			x_start += inv_slope_1;
+			x_end += inv_slope_2;
+		}
+	}
+
+	void Display::draw_filled_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t colour) const
+	{
+		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
+		if (y0 > y1) {
+			utils::int_swap(&y0, &y1);
+			utils::int_swap(&x0, &x1);
+		}
+		if (y1 > y2) {
+			utils::int_swap(&y1, &y2);
+			utils::int_swap(&x1, &x2);
+		}
+		if (y0 > y1) {
+			utils::int_swap(&y0, &y1);
+			utils::int_swap(&x0, &x1);
+		}
+
+		if (y1 == y2) {
+			// Draw flat-bottom triangle
+			fill_flat_bottom_tri(colour_buffer, display_mode, x0, y0, x1, y1, x2, y2, colour);
+		}
+		else if (y0 == y1) {
+			// Draw flat-top triangle
+			fill_flat_top_tri(colour_buffer, display_mode, x0, y0, x1, y1, x2, y2, colour);
+		}
+		else {
+			// Calculate the new vertex (Mx,My) using triangle similarity
+			int My = y1;
+			int Mx = (((x2 - x0) * (y1 - y0)) / (y2 - y0)) + x0;
+
+			// Draw flat-bottom triangle
+			fill_flat_bottom_tri(colour_buffer, display_mode, x0, y0, x1, y1, Mx, My, colour);
+
+			// Draw flat-top triangle
+			fill_flat_top_tri(colour_buffer, display_mode, x1, y1, Mx, My, x2, y2, colour);
+		}
 	}
 }

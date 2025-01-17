@@ -100,13 +100,13 @@ namespace vector
 		m_y = y;
 	}
 
-	Vector2d Vector3d::project(const double fov_factor) const
+	Vector2d<double> Vector3d::project(const double fov_factor) const
 	{
 		// implementing perspective divide
 		// P'x = Px     P'y = Py
 		//     -----         -----
 		//       Pz           Pz
-		return Vector2d{ (m_x * fov_factor) / m_z, (m_y * fov_factor) / m_z };
+		return Vector2d<double>{ (m_x * fov_factor) / m_z, (m_y * fov_factor) / m_z };
 		// ortho projection:
 		//return Vector2d{ (m_x * fov_factor), (m_y * fov_factor) };
 	}

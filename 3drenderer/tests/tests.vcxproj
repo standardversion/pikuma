@@ -139,7 +139,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;gtest_main.lib;gtest.lib;gmock.lib;gmock_main.lib;display.obj;input.obj;vector2d.obj;vector3d.obj;utils.obj;mesh.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;gtest_main.lib;gtest.lib;gmock.lib;gmock_main.lib;display.obj;input.obj;vector2d.obj;vector3d.obj;utils.obj;mesh.obj;triangle.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -147,6 +147,7 @@
     <ClCompile Include="input_tests.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mesh_tests.cpp" />
+    <ClCompile Include="triangle_tests.cpp" />
     <ClCompile Include="utils_tests.cpp" />
     <ClCompile Include="vector2d_tests.cpp" />
     <ClCompile Include="vector3d_tests.cpp" />

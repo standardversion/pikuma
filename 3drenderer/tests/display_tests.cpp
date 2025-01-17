@@ -212,12 +212,13 @@ namespace display_tests
 	{
 		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
 		std::uint32_t ln{ 0xFFFFFFFF };
-		geo::triangle_t triangle{
-			std::vector<vector::Vector2d> {
-				{1.0, 2.0},
-				{10.0, 2.0},
-				{10.0, 5.0}
-			}
+		std::vector<vector::Vector2d> points{
+			{1.0, 2.0},
+			{ 10.0, 2.0 },
+			{ 10.0, 5.0 }
+		};
+		geo::Triangle triangle{
+			points
 		};
 		class MockDisplay : public display::Display
 		{
