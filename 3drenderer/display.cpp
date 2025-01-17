@@ -132,11 +132,8 @@ namespace display
 		}
 		else {
 			vector::Vector2d<int> midpoint{ triangle.get_midpoint() };
-			std::vector<vector::Vector2d<int>> flat_bottom_points{ triangle.m_points[0], triangle.m_points[1], midpoint };
-			geo::Triangle<int> flat_bottom_triangle{ flat_bottom_points };
-			std::vector<vector::Vector2d<int>> flat_top_points{ triangle.m_points[1], midpoint, triangle.m_points[2] };
-			geo::Triangle<int> flat_top_triangle{ flat_top_points };
-
+			geo::Triangle<int> flat_bottom_triangle{ triangle.m_points[0], triangle.m_points[1], midpoint };
+			geo::Triangle<int> flat_top_triangle{ triangle.m_points[1], midpoint, triangle.m_points[2] };
 			fill_flat_bottom_triangle(colour_buffer, display_mode, flat_bottom_triangle, colour);
 			fill_flat_top_triangle(colour_buffer, display_mode, flat_top_triangle, colour);
 		}
@@ -144,10 +141,10 @@ namespace display
 
 	void Display::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
-		float x_start_slope{ triangle.get_inverse_slope(1, 0) };
-		float x_end_slope{ triangle.get_inverse_slope(2, 0) };
-		float x_start{ static_cast<float>(triangle.m_points[0].m_x) };
-		float x_end{ static_cast<float>(triangle.m_points[0].m_x) };
+		double x_start_slope{ triangle.get_inverse_slope(1, 0) };
+		double x_end_slope{ triangle.get_inverse_slope(2, 0) };
+		double x_start{ static_cast<double>(triangle.m_points[0].m_x) };
+		double x_end{ static_cast<double>(triangle.m_points[0].m_x) };
 		for (int i{ triangle.m_points[0].m_y }; i <= triangle.m_points[1].m_y; i++)
 		{
 			draw_line(
@@ -166,10 +163,10 @@ namespace display
 
 	void Display::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
-		float x_start_slope{ triangle.get_inverse_slope(2, 0) };
-		float x_end_slope{ triangle.get_inverse_slope(2, 1) };
-		float x_start{ static_cast<float>(triangle.m_points[2].m_x) };
-		float x_end{ static_cast<float>(triangle.m_points[2].m_x) };
+		double x_start_slope{ triangle.get_inverse_slope(2, 0) };
+		double x_end_slope{ triangle.get_inverse_slope(2, 1) };
+		double x_start{ static_cast<double>(triangle.m_points[2].m_x) };
+		double x_end{ static_cast<double>(triangle.m_points[2].m_x) };
 		for (int i{ triangle.m_points[2].m_y }; i >= triangle.m_points[0].m_y; i--)
 		{
 			draw_line(

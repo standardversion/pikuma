@@ -25,6 +25,12 @@ namespace geo
 
 		};
 
+		Triangle<T>(vector::Vector2d<T>& a, vector::Vector2d<T>& b , vector::Vector2d<T>& c)
+			: m_points{ std::vector <vector::Vector2d<T>>{ a, b, c } }
+		{
+
+		};
+
 		void sort()
 		{
 			vector::Vector2d<T> point0{ m_points[0] };
