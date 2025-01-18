@@ -17,7 +17,7 @@ namespace triangle_tests
 		geo::Triangle<double> triangle{
 			points
 		};
-		triangle.sort();
+		triangle.sort_vertices_by_y();
 		EXPECT_EQ(triangle.m_points[0].m_y, 2.0);
 		EXPECT_EQ(triangle.m_points[0].m_x, 1.0);
 		EXPECT_EQ(triangle.m_points[1].m_y, 3.0);
@@ -36,7 +36,7 @@ namespace triangle_tests
 		geo::Triangle<double> triangle{
 			points
 		};
-		triangle.sort();
+		triangle.sort_vertices_by_y();
 		EXPECT_EQ(triangle.m_points[0].m_y, 2.0);
 		EXPECT_EQ(triangle.m_points[0].m_x, 1.0);
 		EXPECT_EQ(triangle.m_points[1].m_y, 3.0);
@@ -55,7 +55,7 @@ namespace triangle_tests
 		geo::Triangle<double> triangle{
 			points
 		};
-		triangle.sort();
+		triangle.sort_vertices_by_y();
 		EXPECT_EQ(triangle.m_points[0].m_y, 2.0);
 		EXPECT_EQ(triangle.m_points[0].m_x, 1.0);
 		EXPECT_EQ(triangle.m_points[1].m_y, 3.0);

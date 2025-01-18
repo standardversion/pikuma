@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <algorithm>
 #include "display.h"
 #include "input.h"
 #include "sdlwrapper.h"
@@ -62,27 +63,32 @@ void update(
 			point.m_z += 5.0;
 			transformed_vertices.push_back(point);
 		}
-		// check backface culling
-		vector::Vector3d vector_a{ transformed_vertices[0] };  /*   A   */
-		vector::Vector3d vector_b{ transformed_vertices[1] };  /*  / \  */
-		vector::Vector3d vector_c{ transformed_vertices[2] };  /* C---B */
-		// get vector subtraction of B-A and C-A
-		vector::Vector3d vector_ab{ vector_b - vector_a };
-		vector::Vector3d vector_ac{ vector_c - vector_a };
-		vector_ab.normalize();
-		vector_ac.normalize();
-		// compute the normal at the vertex (using cross product to find perpendicular)
-		// order of the cross product depends on the coordinate system
-		// since this is a left handed system our order of cross product is ab x ac
-		vector::Vector3d normal{ vector_ab.cross_product(vector_ac) };
-		normal.normalize();
-		// find the camera ray ie the vector between a point in the triangle and the camera origin
-		vector::Vector3d camera_ray{ camera_position - vector_a };
+		// get avg depth of each face so we can sort and render by depth
+		projected_triangle.m_avg_depth = (transformed_vertices[0].m_z + transformed_vertices[1].m_z + transformed_vertices[2].m_z) / 3.0;
+		 
+		if (backface_culling) {
+			// check backface culling
+			vector::Vector3d vector_a{ transformed_vertices[0] };  /*   A   */
+			vector::Vector3d vector_b{ transformed_vertices[1] };  /*  / \  */
+			vector::Vector3d vector_c{ transformed_vertices[2] };  /* C---B */
+			// get vector subtraction of B-A and C-A
+			vector::Vector3d vector_ab{ vector_b - vector_a };
+			vector::Vector3d vector_ac{ vector_c - vector_a };
+			vector_ab.normalize();
+			vector_ac.normalize();
+			// compute the normal at the vertex (using cross product to find perpendicular)
+			// order of the cross product depends on the coordinate system
+			// since this is a left handed system our order of cross product is ab x ac
+			vector::Vector3d normal{ vector_ab.cross_product(vector_ac) };
+			normal.normalize();
+			// find the camera ray ie the vector between a point in the triangle and the camera origin
+			vector::Vector3d camera_ray{ camera_position - vector_a };
 
-		// calculate how aligned the camera ray is with the face normal (using dot product)
-		if (backface_culling && camera_ray.dot_product(normal) < 0)
-		{
-			continue;
+			// calculate how aligned the camera ray is with the face normal (using dot product)
+			if (camera_ray.dot_product(normal) < 0)
+			{
+				continue;
+			}
 		}
 		// project the point
 		std::size_t counter{ 0 };
@@ -95,6 +101,11 @@ void update(
 		}
 		triangles_to_render.push_back(projected_triangle);
 	}
+	std::sort(triangles_to_render.begin(), triangles_to_render.end(), [](const geo::Triangle<int>& a, const geo::Triangle<int>& b)
+		{
+			return a.m_avg_depth > b.m_avg_depth;
+		}
+	);
 }
 
 void render(
@@ -150,8 +161,8 @@ void render(
 					display_mode,
 					point.m_x,
 					point.m_y,
-					2,
-					2,
+					4,
+					4,
 					vertex_colour
 				);
 			}

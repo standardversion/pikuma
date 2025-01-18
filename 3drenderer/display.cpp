@@ -176,7 +176,7 @@ namespace display
 	void Display::fill_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
-		triangle.sort();
+		triangle.sort_vertices_by_y();
 
 		if (triangle.m_points[1].m_y == triangle.m_points[2].m_y)
 		{

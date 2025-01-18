@@ -18,11 +18,12 @@ namespace geo
 		Triangle<T>() {};
 		Triangle<T>(std::vector<vector::Vector2d<T>>& points);
 		Triangle<T>(vector::Vector2d<T>& a, vector::Vector2d<T>& b, vector::Vector2d<T>& c);
-		void sort();
+		void sort_vertices_by_y();
 		vector::Vector2d<T> get_midpoint() const;
 		double get_inverse_slope(std::size_t lower_pt_index, std::size_t higher_pt_index) const;
 
 		std::vector<vector::Vector2d<T>> m_points;
+		double m_avg_depth{0.0};
 	};
 
 	template <typename T>
@@ -40,7 +41,7 @@ namespace geo
 	};
 
 	template <typename T>
-	void Triangle<T>::sort()
+	void Triangle<T>::sort_vertices_by_y()
 	{
 		vector::Vector2d<T> point0{ m_points[0] };
 		vector::Vector2d<T> point1{ m_points[1] };
