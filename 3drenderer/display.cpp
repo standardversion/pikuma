@@ -3,6 +3,39 @@
 
 namespace display
 {
+	void Display::activate_render_mode(const int render_mode, bool& render_wireframe, bool& render_vertex, bool& render_shaded) const
+	{
+		switch (render_mode)
+		{
+		case(display::RenderModes::wireframe):
+			render_wireframe = true;
+			render_vertex = false;
+			render_shaded = false;
+			break;
+		case(display::RenderModes::wireframe_vertex):
+			render_wireframe = true;
+			render_vertex = true;
+			render_shaded = false;
+			break;
+		case(display::RenderModes::shaded):
+			render_wireframe = false;
+			render_vertex = false;
+			render_shaded = true;
+			break;
+		case(display::RenderModes::shaded_wireframe):
+			render_wireframe = true;
+			render_vertex = false;
+			render_shaded = true;
+			break;
+		case(display::RenderModes::shaded_wireframe_vertex):
+			render_wireframe = true;
+			render_vertex = true;
+			render_shaded = true;
+			break;
+		default:
+			break;
+		}
+	}
 	void Display::cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, const SDLWrapper& sdl) const
 	{
 		sdl.SDL_DestroyRenderer(renderer);

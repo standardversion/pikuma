@@ -15,6 +15,34 @@ namespace display_tests
 	MockSDL mock_sdl{};
 	display::Display dsp{};
 
+	TEST(display_test, activate_render_modes)
+	{
+		bool render_wireframe{ false };
+		bool render_vertex{ false };
+		bool render_shaded{ false };
+
+		dsp.activate_render_mode(0, render_wireframe, render_vertex, render_shaded);
+		EXPECT_EQ(render_wireframe, true);
+		EXPECT_EQ(render_vertex, false);
+		EXPECT_EQ(render_shaded, false);
+		dsp.activate_render_mode(1, render_wireframe, render_vertex, render_shaded);
+		EXPECT_EQ(render_wireframe, true);
+		EXPECT_EQ(render_vertex, true);
+		EXPECT_EQ(render_shaded, false);
+		dsp.activate_render_mode(2, render_wireframe, render_vertex, render_shaded);
+		EXPECT_EQ(render_wireframe, false);
+		EXPECT_EQ(render_vertex, false);
+		EXPECT_EQ(render_shaded, true);
+		dsp.activate_render_mode(3, render_wireframe, render_vertex, render_shaded);
+		EXPECT_EQ(render_wireframe, true);
+		EXPECT_EQ(render_vertex, false);
+		EXPECT_EQ(render_shaded, true);
+		dsp.activate_render_mode(4, render_wireframe, render_vertex, render_shaded);
+		EXPECT_EQ(render_wireframe, true);
+		EXPECT_EQ(render_vertex, true);
+		EXPECT_EQ(render_shaded, true);
+	}
+
 	TEST(display_test, cleanup_success)
 	{
 		SDL_Window* w_ptr{ SDL_CreateWindow(NULL, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_BORDERLESS) };

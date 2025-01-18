@@ -20,6 +20,7 @@ void update(
 	const vector::Vector3d& camera_position,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
+	const bool backface_culling,
 	const SDLWrapper& sdl
 )
 {
@@ -79,7 +80,7 @@ void update(
 		vector::Vector3d camera_ray{ camera_position - vector_a };
 
 		// calculate how aligned the camera ray is with the face normal (using dot product)
-		if (camera_ray.dot_product(normal) < 0)
+		if (backface_culling && camera_ray.dot_product(normal) < 0)
 		{
 			continue;
 		}
@@ -108,39 +109,52 @@ void render(
 	const std::uint32_t fill_colour,
 	const int grid_on,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
+	const int render_mode,
 	const SDLWrapper& sdl
 )
 {
-
+	bool render_wireframe{ false };
+	bool render_vertex{ false };
+	bool render_shaded{ false };
+	display.activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded);
 	//display.draw_grid(colour_buffer, display_mode, edge_colour, bg_colour, grid_on);
 
 	for (auto& triangle : triangles_to_render)
 	{
-		display.fill_triangle(
-			colour_buffer,
-			display_mode,
-			triangle,
-			fill_colour
-		);
-
-		display.draw_triangle(
-			colour_buffer,
-			display_mode,
-			triangle,
-			edge_colour
-		);
-
-		for (const auto& point : triangle.m_points)
+		if (render_shaded)
 		{
-			display.draw_rect(
+			display.fill_triangle(
 				colour_buffer,
 				display_mode,
-				point.m_x,
-				point.m_y,
-				2,
-				2,
-				vertex_colour
+				triangle,
+				fill_colour
 			);
+		}
+		
+		if (render_wireframe)
+		{
+			display.draw_triangle(
+				colour_buffer,
+				display_mode,
+				triangle,
+				edge_colour
+			);
+		}
+		
+		if (render_vertex)
+		{
+			for (const auto& point : triangle.m_points)
+			{
+				display.draw_rect(
+					colour_buffer,
+					display_mode,
+					point.m_x,
+					point.m_y,
+					2,
+					2,
+					vertex_colour
+				);
+			}
 		}
 	}
 
@@ -177,10 +191,12 @@ int main(int argc, char* argv[])
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
 	geo::Mesh mesh{ ".\\assets\\cube.obj" };
+	int render_mode{ display::RenderModes::wireframe };
+	bool backface_culling{ true };
 	while (is_running)
 	{
-		input.process(is_running, event, sdl);
-		update(mesh, triangles_to_render, fov_factor, camera_postion, &display_mode, previous_frame_time, sdl);
+		input.process(is_running, render_mode, backface_culling, event, sdl);
+		update(mesh, triangles_to_render, fov_factor, camera_postion, &display_mode, previous_frame_time, backface_culling, sdl);
 		render(
 			display,
 			renderer,
@@ -193,6 +209,7 @@ int main(int argc, char* argv[])
 			fill_colour,
 			10,
 			triangles_to_render,
+			render_mode,
 			sdl
 		);
 	}

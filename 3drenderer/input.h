@@ -8,6 +8,6 @@ namespace input
 	{
 	public:
 		virtual ~Input() = default;
-		virtual void process(bool& is_running, SDL_Event& event, const SDLWrapper& sdl) const;
+		virtual void process(bool& is_running, int& render_mode, bool& backface_culling, SDL_Event& event, const SDLWrapper& sdl) const;
 	};
 }
