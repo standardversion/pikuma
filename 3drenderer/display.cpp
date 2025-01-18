@@ -86,7 +86,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<double>& triangle, const std::uint32_t colour) const
+	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		draw_line(
 			colour_buffer,
@@ -117,6 +117,29 @@ namespace display
 		);
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	// Draw a filled triangle with the flat-top/flat-bottom method
+	// We split the original triangle in two, half flat-bottom and half flat-top
+	///////////////////////////////////////////////////////////////////////////////
+	//
+	//          (x0,y0)
+	//            / \
+	//           /   \
+	//          /     \
+	//         /       \
+	//        /         \
+	//   (x1,y1)------(Mx,My)
+	//       \_           \
+	//          \_         \
+	//             \_       \
+	//                \_     \
+	//                   \    \
+	//                     \_  \
+	//                        \_\
+	//                           \
+	//                         (x2,y2)
+	//
+	///////////////////////////////////////////////////////////////////////////////
 	void Display::fill_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		// sort the triangle by the y component
@@ -139,6 +162,19 @@ namespace display
 		}
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	// Draw a filled a triangle with a flat bottom
+	///////////////////////////////////////////////////////////////////////////////
+	//
+	//        (x0,y0)
+	//          / \
+	//         /   \
+	//        /     \
+	//       /       \
+	//      /         \
+	//  (x1,y1)------(x2,y2)
+	//
+	///////////////////////////////////////////////////////////////////////////////
 	void Display::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		double x_start_slope{ triangle.get_inverse_slope(1, 0) };
@@ -161,6 +197,19 @@ namespace display
 		}
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	// Draw a filled a triangle with a flat top
+	///////////////////////////////////////////////////////////////////////////////
+	//
+	//  (x0,y0)------(x1,y1)
+	//      \         /
+	//       \       /
+	//        \     /
+	//         \   /
+	//          \ /
+	//        (x2,y2)
+	//
+	///////////////////////////////////////////////////////////////////////////////
 	void Display::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		double x_start_slope{ triangle.get_inverse_slope(2, 0) };
