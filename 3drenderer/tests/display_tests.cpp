@@ -212,12 +212,12 @@ namespace display_tests
 	{
 		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
 		std::uint32_t ln{ 0xFFFFFFFF };
-		std::vector<vector::Vector2d> points{
-			{1.0, 2.0},
-			{ 10.0, 2.0 },
-			{ 10.0, 5.0 }
+		std::vector <vector::Vector2d<int>> points{
+			{1, 2},
+			{ 10, 2 },
+			{ 10, 5 }
 		};
-		geo::Triangle triangle{
+		geo::Triangle<int> triangle{
 			points
 		};
 		class MockDisplay : public display::Display
@@ -226,14 +226,182 @@ namespace display_tests
 			MOCK_METHOD(void, draw_line, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour), (const, override));
 		};
 		MockDisplay mock_dsp;
-		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 1.0, 2.0, 10.0, 2.0, ln))
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 1, 2, 10, 2, ln))
 			.Times(1);
-		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 1.0, 2.0, 10.0, 5.0, ln))
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 1, 2, 10, 5, ln))
 			.Times(1);
-		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 10.0, 2.0, 10.0, 5.0, ln))
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 10, 2, 10, 5, ln))
 			.Times(1);
 
 		mock_dsp.draw_triangle(colour_buffer, &display_mode, triangle, ln);
+		delete[] colour_buffer;
+		colour_buffer = nullptr;
+	}
+
+	TEST(display_test, fill_triangle_only_flat_bottom_success)
+	{
+		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
+		std::uint32_t fill{ 0xFFFFFFFF };
+		std::vector <vector::Vector2d<int>> points{
+			{1, 2},
+			{ 10, 5 },
+			{ 10, 5 }
+		};
+		geo::Triangle<int> triangle{
+			points
+		};
+
+		class MockDisplay : public display::Display
+		{
+		public:
+			MOCK_METHOD(void, fill_flat_bottom_triangle, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour), (const, override));
+			MOCK_METHOD(void, fill_flat_top_triangle, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour), (const, override));
+		};
+
+
+		MockDisplay mock_dsp;
+		EXPECT_CALL(mock_dsp, fill_flat_bottom_triangle(colour_buffer, &display_mode, ::testing::_, fill))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, fill_flat_top_triangle(colour_buffer, &display_mode, ::testing::_, fill))
+			.Times(0);
+
+		mock_dsp.fill_triangle(colour_buffer, &display_mode, triangle, fill);
+		delete[] colour_buffer;
+		colour_buffer = nullptr;
+	}
+
+	TEST(display_test, fill_triangle_only_flat_top_success)
+	{
+		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
+		std::uint32_t fill{ 0xFFFFFFFF };
+		std::vector <vector::Vector2d<int>> points{
+			{1, 2},
+			{ 10, 2 },
+			{ 10, 5 }
+		};
+		geo::Triangle<int> triangle{
+			points
+		};
+
+		class MockDisplay : public display::Display
+		{
+		public:
+			MOCK_METHOD(void, fill_flat_bottom_triangle, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour), (const, override));
+			MOCK_METHOD(void, fill_flat_top_triangle, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour), (const, override));
+		};
+
+
+		MockDisplay mock_dsp;
+		EXPECT_CALL(mock_dsp, fill_flat_bottom_triangle(colour_buffer, &display_mode, ::testing::_, fill))
+			.Times(0);
+		EXPECT_CALL(mock_dsp, fill_flat_top_triangle(colour_buffer, &display_mode, ::testing::_, fill))
+			.Times(1);
+
+		mock_dsp.fill_triangle(colour_buffer, &display_mode, triangle, fill);
+		delete[] colour_buffer;
+		colour_buffer = nullptr;
+	}
+
+	TEST(display_test, fill_triangle_success)
+	{
+		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
+		std::uint32_t fill{ 0xFFFFFFFF };
+		std::vector <vector::Vector2d<int>> points{
+			{1, 2},
+			{ 10, 7 },
+			{ 10, 5 }
+		};
+		geo::Triangle<int> triangle{
+			points
+		};
+
+		class MockDisplay : public display::Display
+		{
+		public:
+			MOCK_METHOD(void, fill_flat_bottom_triangle, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour), (const, override));
+			MOCK_METHOD(void, fill_flat_top_triangle, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour), (const, override));
+		};
+
+
+		MockDisplay mock_dsp;
+		EXPECT_CALL(mock_dsp, fill_flat_bottom_triangle(colour_buffer, &display_mode, ::testing::_, fill))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, fill_flat_top_triangle(colour_buffer, &display_mode, ::testing::_, fill))
+			.Times(1);
+
+		mock_dsp.fill_triangle(colour_buffer, &display_mode, triangle, fill);
+		delete[] colour_buffer;
+		colour_buffer = nullptr;
+	}
+
+	TEST(display_test, fill_flat_bottom_triangle_success)
+	{
+		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
+		std::uint32_t ln{ 0xFFFFFFFF };
+		std::vector <vector::Vector2d<int>> points{
+			{0, 0},
+			{ 10, 5 },
+			{ 20, 5 }
+		};
+		geo::Triangle<int> triangle{
+			points
+		};
+		class MockDisplay : public display::Display
+		{
+		public:
+			MOCK_METHOD(void, draw_line, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour), (const, override));
+		};
+		MockDisplay mock_dsp;
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 0.0, 0, 0.0, 0, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 2.0, 1, 4.0, 1, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 4.0, 2, 8.0, 2, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 6.0, 3, 12.0, 3, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 8.0, 4, 16.0, 4, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 10.0, 5, 20.0, 5, ln))
+			.Times(1);
+
+		mock_dsp.fill_flat_bottom_triangle(colour_buffer, &display_mode, triangle, ln);
+		delete[] colour_buffer;
+		colour_buffer = nullptr;
+	}
+
+	TEST(display_test, fill_flat_top_triangle_success)
+	{
+		std::uint32_t* colour_buffer{ new std::uint32_t[1]{10} };
+		std::uint32_t ln{ 0xFFFFFFFF };
+		std::vector <vector::Vector2d<int>> points{
+			{ 10, 5 },
+			{ 20, 5 },
+			{ 15, 10 },
+		};
+		geo::Triangle<int> triangle{
+			points
+		};
+		class MockDisplay : public display::Display
+		{
+		public:
+			MOCK_METHOD(void, draw_line, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour), (const, override));
+		};
+		MockDisplay mock_dsp;
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 15.0, 10, 15.0, 10, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 14.0, 9, 16.0, 9, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 13.0, 8, 17.0, 8, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 12.0, 7, 18.0, 7, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 11.0, 6, 19.0, 6, ln))
+			.Times(1);
+		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 10.0, 5, 20.0, 5, ln))
+			.Times(1);
+
+		mock_dsp.fill_flat_top_triangle(colour_buffer, &display_mode, triangle, ln);
 		delete[] colour_buffer;
 		colour_buffer = nullptr;
 	}

@@ -20,20 +20,20 @@ namespace geo
 		Triangle<T>(vector::Vector2d<T>& a, vector::Vector2d<T>& b, vector::Vector2d<T>& c);
 		void sort();
 		vector::Vector2d<T> get_midpoint() const;
-		float get_inverse_slope(std::size_t lower_pt_index, std::size_t higher_pt_index) const;
+		double get_inverse_slope(std::size_t lower_pt_index, std::size_t higher_pt_index) const;
 
 		std::vector<vector::Vector2d<T>> m_points;
 	};
 
 	template <typename T>
-	Triangle<T>::Triangle<T>(std::vector<vector::Vector2d<T>>& points)
+	Triangle<T>::Triangle(std::vector<vector::Vector2d<T>>& points)
 		: m_points{ points }
 	{
 
 	};
 
 	template <typename T>
-	Triangle<T>::Triangle<T>(vector::Vector2d<T>& a, vector::Vector2d<T>& b, vector::Vector2d<T>& c)
+	Triangle<T>::Triangle(vector::Vector2d<T>& a, vector::Vector2d<T>& b, vector::Vector2d<T>& c)
 		: m_points{ std::vector <vector::Vector2d<T>>{ a, b, c } }
 	{
 
@@ -76,8 +76,8 @@ namespace geo
 	}
 
 	template <typename T>
-	float Triangle<T>::get_inverse_slope(std::size_t lower_pt_index, std::size_t higher_pt_index) const
+	double Triangle<T>::get_inverse_slope(std::size_t lower_pt_index, std::size_t higher_pt_index) const
 	{
-		return (m_points[lower_pt_index].m_x - m_points[higher_pt_index].m_x) / static_cast<float>(m_points[lower_pt_index].m_y - m_points[higher_pt_index].m_y);
+		return (m_points[lower_pt_index].m_x - m_points[higher_pt_index].m_x) / static_cast<double>(m_points[lower_pt_index].m_y - m_points[higher_pt_index].m_y);
 	}
 }
