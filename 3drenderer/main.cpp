@@ -13,6 +13,7 @@
 #include "mesh.h"
 #include "triangle.h"
 #include "utils.h"
+#include "matrix.h"
 
 void update(
 	geo::Mesh& mesh_to_render,
@@ -38,6 +39,11 @@ void update(
 	mesh_to_render.m_rotation.m_x += 0.01;
 	mesh_to_render.m_rotation.m_y += 0.01;
 	mesh_to_render.m_rotation.m_z += 0.01;
+
+	mesh_to_render.m_scale.m_x += 0.02;
+
+	matrix::Matrix4x4 scale_matrix{ matrix::Matrix4x4::make_scale_matrix(mesh_to_render.m_scale.m_x, mesh_to_render.m_scale.m_y, mesh_to_render.m_scale.m_z) };
+
 	for (const auto& face : mesh_to_render.m_faces)
 	{
 		//each mesh face has 3 vertices stored as the index of the vertex in mesh_vertices
