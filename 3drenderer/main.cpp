@@ -39,10 +39,17 @@ void update(
 	mesh_to_render.m_rotation.m_x += 0.01;
 	mesh_to_render.m_rotation.m_y += 0.01;
 	mesh_to_render.m_rotation.m_z += 0.01;
-
 	mesh_to_render.m_scale.m_x += 0.02;
+	mesh_to_render.m_scale.m_y += 0.01;
+	mesh_to_render.m_translation.m_x += 0.01;
+	// move pionts away from camera
+	mesh_to_render.m_translation.m_z = 5.0;
 
 	matrix::Matrix4x4 scale_matrix{ matrix::Matrix4x4::make_scale_matrix(mesh_to_render.m_scale.m_x, mesh_to_render.m_scale.m_y, mesh_to_render.m_scale.m_z) };
+	matrix::Matrix4x4 translation_matrix{ matrix::Matrix4x4::make_translation_matrix(mesh_to_render.m_translation.m_x, mesh_to_render.m_translation.m_y, mesh_to_render.m_translation.m_z) };
+	matrix::Matrix4x4 rotatation_matrix_x{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_x, 'x')};
+	matrix::Matrix4x4 rotatation_matrix_y{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_y, 'y') };
+	matrix::Matrix4x4 rotatation_matrix_z{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_z, 'z') };
 
 	for (const auto& face : mesh_to_render.m_faces)
 	{
@@ -53,20 +60,19 @@ void update(
 			mesh_to_render.m_vertices[face.b - 1],
 			mesh_to_render.m_vertices[face.c - 1]
 		};
-		//loop through each vertex and project the points of those faces
+		// loop through each vertex and project the points of those faces
 		// convert the triangle points to ints as we'll project to screen space so we're dealing with x & y pixels which are in ints
 		geo::Triangle<int> projected_triangle{ };
-		std::vector<vector::Vector3d> transformed_vertices{};
+		std::vector<vector::Vector4d> transformed_vertices{};
 		// apply transformations
 		for (const auto& vertex : face_vertices)
 		{
-			vector::Vector3d point{ vertex };
-			//rotate the point
-			point.rotate_x(mesh_to_render.m_rotation.m_x);
-			point.rotate_y(mesh_to_render.m_rotation.m_y);
-			point.rotate_z(mesh_to_render.m_rotation.m_z);
-			// move pionts away from camera
-			point.m_z += 5.0;
+			vector::Vector4d point{ vertex };
+			point = scale_matrix.mult_vec4d(point);
+			point = rotatation_matrix_x.mult_vec4d(point);
+			point = rotatation_matrix_y.mult_vec4d(point);
+			point = rotatation_matrix_z.mult_vec4d(point);
+			point = translation_matrix.mult_vec4d(point);
 			transformed_vertices.push_back(point);
 		}
 		// get avg depth of each face so we can sort and render by depth
@@ -100,7 +106,8 @@ void update(
 		std::size_t counter{ 0 };
 		for (const auto& vertex : transformed_vertices)
 		{
-			vector::Vector2d<double> projected_point{ vertex.project(fov_factor) };
+			vector::Vector3d vertex_as_vec3d{ vertex };
+			vector::Vector2d<double> projected_point{ vertex_as_vec3d.project(fov_factor) };
 			projected_point.m_x += display_mode->w / 2;
 			projected_point.m_y += display_mode->h / 2;
 			projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
