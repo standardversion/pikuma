@@ -39,8 +39,8 @@ void update(
 	mesh_to_render.m_rotation.m_x += 0.01;
 	mesh_to_render.m_rotation.m_y += 0.01;
 	mesh_to_render.m_rotation.m_z += 0.01;
-	mesh_to_render.m_scale.m_x += 0.02;
-	mesh_to_render.m_scale.m_y += 0.01;
+	mesh_to_render.m_scale.m_x += 0.002;
+	mesh_to_render.m_scale.m_y += 0.001;
 	mesh_to_render.m_translation.m_x += 0.01;
 	// move pionts away from camera
 	mesh_to_render.m_translation.m_z = 5.0;
@@ -68,11 +68,24 @@ void update(
 		for (const auto& vertex : face_vertices)
 		{
 			vector::Vector4d point{ vertex };
-			point = scale_matrix.mult_vec4d(point);
+			matrix::Matrix4x4 world_matrix{};
+			// order matters scale, then rotate and then translate
+			world_matrix = matrix::Matrix4x4::mult_matrix(scale_matrix, world_matrix);
+			world_matrix = matrix::Matrix4x4::mult_matrix(rotatation_matrix_z, world_matrix);
+			world_matrix = matrix::Matrix4x4::mult_matrix(rotatation_matrix_y, world_matrix);
+			world_matrix = matrix::Matrix4x4::mult_matrix(rotatation_matrix_x, world_matrix);
+			world_matrix = matrix::Matrix4x4::mult_matrix(translation_matrix, world_matrix);
+			/*world_matrix *= scale_matrix;
+			world_matrix *= rotatation_matrix_z;
+			world_matrix *= rotatation_matrix_y;
+			world_matrix *= rotatation_matrix_x;
+			world_matrix *= translation_matrix;*/
+			point = world_matrix.mult_vec4d(point);
+			/*point = scale_matrix.mult_vec4d(point);
 			point = rotatation_matrix_x.mult_vec4d(point);
 			point = rotatation_matrix_y.mult_vec4d(point);
 			point = rotatation_matrix_z.mult_vec4d(point);
-			point = translation_matrix.mult_vec4d(point);
+			point = translation_matrix.mult_vec4d(point);*/
 			transformed_vertices.push_back(point);
 		}
 		// get avg depth of each face so we can sort and render by depth

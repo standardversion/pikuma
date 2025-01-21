@@ -44,8 +44,8 @@ namespace matrix
 			break;
 		case('y'):
 			rotation_matrix.m_matrix[0][0] = cos(angle);
-			rotation_matrix.m_matrix[0][2] = -sin(angle);
-			rotation_matrix.m_matrix[2][0] = sin(angle);
+			rotation_matrix.m_matrix[0][2] = sin(angle);
+			rotation_matrix.m_matrix[2][0] = -sin(angle);
 			rotation_matrix.m_matrix[2][2] = cos(angle);
 			break;
 		case('z'):
@@ -58,6 +58,32 @@ namespace matrix
 			break;
 		}
 		return rotation_matrix;
+	}
+
+	Matrix4x4& Matrix4x4::operator*=(const Matrix4x4& m)
+	{
+		for (std::size_t i{ 0 }; i < 4; i++)
+		{
+			for (std::size_t j{ 0 }; j < 4; j++)
+			{
+				//this->m_matrix[i][j] = this->m_matrix[i][0] * m.m_matrix[0][j] + this->m_matrix[i][1] * m.m_matrix[1][j] + this->m_matrix[i][2] * m.m_matrix[2][j] + this->m_matrix[i][3] * m.m_matrix[3][j];
+				this->m_matrix[i][j] = m.m_matrix[i][0] * this->m_matrix[0][j] + m.m_matrix[i][1] * this->m_matrix[1][j] + m.m_matrix[i][2] * this->m_matrix[2][j] + m.m_matrix[i][3] * this->m_matrix[3][j];
+			}
+		}
+		return *this;
+	}
+
+	Matrix4x4 Matrix4x4::mult_matrix(const Matrix4x4& a, const Matrix4x4& b)
+	{
+		matrix::Matrix4x4 result{};
+		for (std::size_t i{ 0 }; i < 4; i++)
+		{
+			for (std::size_t j{ 0 }; j < 4; j++)
+			{
+				result.m_matrix[i][j] = a.m_matrix[i][0] * b.m_matrix[0][j] + a.m_matrix[i][1] * b.m_matrix[1][j] + a.m_matrix[i][2] * b.m_matrix[2][j] + a.m_matrix[i][3] * b.m_matrix[3][j];
+			}
+		}
+		return result;
 	}
 
 	vector::Vector4d Matrix4x4::mult_vec4d(const vector::Vector4d& vec4d) const
