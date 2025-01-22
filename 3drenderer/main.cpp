@@ -70,22 +70,12 @@ void update(
 			vector::Vector4d point{ vertex };
 			matrix::Matrix4x4 world_matrix{};
 			// order matters scale, then rotate and then translate
-			world_matrix = matrix::Matrix4x4::mult_matrix(scale_matrix, world_matrix);
-			world_matrix = matrix::Matrix4x4::mult_matrix(rotatation_matrix_z, world_matrix);
-			world_matrix = matrix::Matrix4x4::mult_matrix(rotatation_matrix_y, world_matrix);
-			world_matrix = matrix::Matrix4x4::mult_matrix(rotatation_matrix_x, world_matrix);
-			world_matrix = matrix::Matrix4x4::mult_matrix(translation_matrix, world_matrix);
-			/*world_matrix *= scale_matrix;
+			world_matrix *= scale_matrix;
 			world_matrix *= rotatation_matrix_z;
 			world_matrix *= rotatation_matrix_y;
 			world_matrix *= rotatation_matrix_x;
-			world_matrix *= translation_matrix;*/
+			world_matrix *= translation_matrix;
 			point = world_matrix.mult_vec4d(point);
-			/*point = scale_matrix.mult_vec4d(point);
-			point = rotatation_matrix_x.mult_vec4d(point);
-			point = rotatation_matrix_y.mult_vec4d(point);
-			point = rotatation_matrix_z.mult_vec4d(point);
-			point = translation_matrix.mult_vec4d(point);*/
 			transformed_vertices.push_back(point);
 		}
 		// get avg depth of each face so we can sort and render by depth
