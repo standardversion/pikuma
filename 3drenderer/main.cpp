@@ -17,8 +17,8 @@
 
 void update(
 	geo::Mesh& mesh_to_render,
+	const matrix::Matrix4x4& projection_matrix,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
-	const double fov_factor,
 	const vector::Vector3d& camera_position,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
@@ -37,11 +37,11 @@ void update(
 	triangles_to_render = {};
 
 	mesh_to_render.m_rotation.m_x += 0.01;
-	mesh_to_render.m_rotation.m_y += 0.01;
+	/*mesh_to_render.m_rotation.m_y += 0.01;
 	mesh_to_render.m_rotation.m_z += 0.01;
 	mesh_to_render.m_scale.m_x += 0.002;
 	mesh_to_render.m_scale.m_y += 0.001;
-	mesh_to_render.m_translation.m_x += 0.01;
+	mesh_to_render.m_translation.m_x += 0.01;*/
 	// move pionts away from camera
 	mesh_to_render.m_translation.m_z = 5.0;
 
@@ -109,8 +109,14 @@ void update(
 		std::size_t counter{ 0 };
 		for (const auto& vertex : transformed_vertices)
 		{
-			vector::Vector3d vertex_as_vec3d{ vertex };
-			vector::Vector2d<double> projected_point{ vertex_as_vec3d.project(fov_factor) };
+			// apply project matrix
+			vector::Vector4d projected_vertex{ projection_matrix.project(vertex) };
+			vector::Vector2d<double> projected_point{ projected_vertex.m_x, projected_vertex.m_y };
+
+			//scale first
+			projected_point.m_x *= display_mode->w / 2;
+			projected_point.m_y *= display_mode->h / 2;
+			// then translate
 			projected_point.m_x += display_mode->w / 2;
 			projected_point.m_y += display_mode->h / 2;
 			projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
@@ -214,16 +220,20 @@ int main(int argc, char* argv[])
 
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
-	constexpr const double fov_factor{ 640.0 };
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
 	geo::Mesh mesh{ ".\\assets\\cube.obj" };
 	int render_mode{ display::RenderModes::wireframe };
 	bool backface_culling{ true };
+	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
+	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
+	const double znear{ 0.1 };
+	const double zfar{ 100.0 };
+	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
 		input.process(is_running, render_mode, backface_culling, event, sdl);
-		update(mesh, triangles_to_render, fov_factor, camera_postion, &display_mode, previous_frame_time, backface_culling, sdl);
+		update(mesh, projection_matrix, triangles_to_render, camera_postion, &display_mode, previous_frame_time, backface_culling, sdl);
 		render(
 			display,
 			renderer,

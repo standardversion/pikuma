@@ -3,6 +3,10 @@
 
 namespace matrix
 {
+	// | 1 0 0 0 |
+	// | 0 1 0 0 |
+	// | 0 0 1 0 |
+	// | 0 0 0 1 |
 	Matrix4x4::Matrix4x4()
 		: m_matrix{
 			{ 1.0, 0, 0, 0},
@@ -13,6 +17,29 @@ namespace matrix
 	{
 	};
 
+	// | (h/w)*1/tan(fov/2)             0              0                 0 |
+	// |                  0  1/tan(fov/2)              0                 0 |
+	// |                  0             0     zf/(zf-zn)  (-zf*zn)/(zf-zn) |
+	// |                  0             0              1                 0 |
+	Matrix4x4::Matrix4x4(const double fov, const double aspect, const double znear, const double zfar)
+		: m_matrix{
+			{ 1.0, 0, 0, 0},
+			{ 0, 1.0, 0, 0},
+			{ 0, 0, 1.0, 0},
+			{ 0, 0, 0, 1.0},
+		}
+	{
+		m_matrix[0][0] = aspect * (1 / tan(fov / 2.0));
+		m_matrix[1][1] = 1 / tan(fov / 2.0);
+		m_matrix[2][2] = zfar / (zfar - znear);
+		m_matrix[2][3] = (-zfar * znear) / (zfar - znear);
+		m_matrix[3][2] = 1.0;
+	}
+
+	// | sx  0  0  0 |
+	// |  0 sy  0  0 |
+	// |  0  0 sz  0 |
+	// |  0  0  0  1 |
 	Matrix4x4 Matrix4x4::make_scale_matrix(const double scale_x, const double scale_y, const double scale_z)
 	{
 		matrix::Matrix4x4 scale_matrix{};
@@ -22,6 +49,10 @@ namespace matrix
 		return scale_matrix;
 	}
 
+	// | 1  0  0  tx |
+	// | 0  1  0  ty |
+	// | 0  0  1  tz |
+	// | 0  0  0  1  |
 	Matrix4x4 Matrix4x4::make_translation_matrix(const double transalation_x, const double transalation_y, const double transalation_z)
 	{
 		matrix::Matrix4x4 translation_matrix{};
@@ -37,18 +68,30 @@ namespace matrix
 		switch (axis)
 		{
 		case('x'):
+			// | 1  0  0  0 |
+			// | 0  c -s  0 |
+			// | 0  s  c  0 |
+			// | 0  0  0  1 |
 			rotation_matrix.m_matrix[1][1] = cos(angle);
 			rotation_matrix.m_matrix[1][2] = -sin(angle);
 			rotation_matrix.m_matrix[2][1] = sin(angle);
 			rotation_matrix.m_matrix[2][2] = cos(angle);
 			break;
 		case('y'):
+			// |  c  0  s  0 |
+			// |  0  1  0  0 |
+			// | -s  0  c  0 |
+			// |  0  0  0  1 |
 			rotation_matrix.m_matrix[0][0] = cos(angle);
 			rotation_matrix.m_matrix[0][2] = sin(angle);
 			rotation_matrix.m_matrix[2][0] = -sin(angle);
 			rotation_matrix.m_matrix[2][2] = cos(angle);
 			break;
 		case('z'):
+			// | c -s  0  0 |
+			// | s  c  0  0 |
+			// | 0  0  1  0 |
+			// | 0  0  0  1 |
 			rotation_matrix.m_matrix[0][0] = cos(angle);
 			rotation_matrix.m_matrix[0][1] = -sin(angle);
 			rotation_matrix.m_matrix[1][0] = sin(angle);
@@ -90,5 +133,19 @@ namespace matrix
 			vec4d.m_x * m_matrix[2][0] + vec4d.m_y * m_matrix[2][1] + vec4d.m_z * m_matrix[2][2] + vec4d.m_w * m_matrix[2][3],
 			vec4d.m_x * m_matrix[3][0] + vec4d.m_y * m_matrix[3][1] + vec4d.m_z * m_matrix[3][2] + vec4d.m_w * m_matrix[3][3]
 		};
+	}
+
+	vector::Vector4d Matrix4x4::project(const vector::Vector4d& vec4d) const
+	{
+		vector::Vector4d projection{ mult_vec4d(vec4d) };
+
+		// do perspective divide
+		if (projection.m_w != 0.0)
+		{
+			projection.m_x /= projection.m_w;
+			projection.m_y /= projection.m_w;
+			projection.m_z /= projection.m_w;
+		}
+		return projection;
 	}
 }
