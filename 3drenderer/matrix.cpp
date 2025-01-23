@@ -34,6 +34,7 @@ namespace matrix
 		m_matrix[2][2] = zfar / (zfar - znear);
 		m_matrix[2][3] = (-zfar * znear) / (zfar - znear);
 		m_matrix[3][2] = 1.0;
+		m_matrix[3][3] = 0.0;
 	}
 
 	// | sx  0  0  0 |

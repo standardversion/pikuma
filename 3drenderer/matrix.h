@@ -14,7 +14,7 @@ namespace matrix
 		static Matrix4x4 make_rotation_matrix(const double angle, const char axis = 'x');
 		Matrix4x4& operator*=(const Matrix4x4& m);
 		
-		vector::Vector4d mult_vec4d(const vector::Vector4d& vec4d) const;
+		virtual vector::Vector4d mult_vec4d(const vector::Vector4d& vec4d) const;
 		vector::Vector4d project(const vector::Vector4d& vec4d) const;
 
 		std::vector<std::vector<double>> m_matrix;
