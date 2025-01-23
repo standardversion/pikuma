@@ -1,11 +1,17 @@
-#include "vector3d.h"
 #include <math.h>
+#include "vector3d.h"
+#include "vector4d.h" // Full definition needed here since vector4d.h does not include vector4d.h to resolve circular dep
 
 namespace vector
 {
 	Vector3d::Vector3d(const double x, const double y, const double z)
 		: m_x{x}, m_y{y}, m_z{z}
 	{ }
+
+	Vector3d::Vector3d(const Vector4d& vec4d)
+		: m_x{ vec4d.m_x }, m_y{ vec4d.m_y }, m_z{ vec4d.m_z }
+	{
+	}
 
 	double Vector3d::get_magnitude() const
 	{

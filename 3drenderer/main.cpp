@@ -13,11 +13,12 @@
 #include "mesh.h"
 #include "triangle.h"
 #include "utils.h"
+#include "matrix.h"
 
 void update(
 	geo::Mesh& mesh_to_render,
+	const matrix::Matrix4x4& projection_matrix,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
-	const double fov_factor,
 	const vector::Vector3d& camera_position,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
@@ -36,8 +37,20 @@ void update(
 	triangles_to_render = {};
 
 	mesh_to_render.m_rotation.m_x += 0.01;
-	mesh_to_render.m_rotation.m_y += 0.01;
+	/*mesh_to_render.m_rotation.m_y += 0.01;
 	mesh_to_render.m_rotation.m_z += 0.01;
+	mesh_to_render.m_scale.m_x += 0.002;
+	mesh_to_render.m_scale.m_y += 0.001;
+	mesh_to_render.m_translation.m_x += 0.01;*/
+	// move pionts away from camera
+	mesh_to_render.m_translation.m_z = 5.0;
+
+	matrix::Matrix4x4 scale_matrix{ matrix::Matrix4x4::make_scale_matrix(mesh_to_render.m_scale.m_x, mesh_to_render.m_scale.m_y, mesh_to_render.m_scale.m_z) };
+	matrix::Matrix4x4 translation_matrix{ matrix::Matrix4x4::make_translation_matrix(mesh_to_render.m_translation.m_x, mesh_to_render.m_translation.m_y, mesh_to_render.m_translation.m_z) };
+	matrix::Matrix4x4 rotatation_matrix_x{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_x, 'x')};
+	matrix::Matrix4x4 rotatation_matrix_y{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_y, 'y') };
+	matrix::Matrix4x4 rotatation_matrix_z{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_z, 'z') };
+
 	for (const auto& face : mesh_to_render.m_faces)
 	{
 		//each mesh face has 3 vertices stored as the index of the vertex in mesh_vertices
@@ -47,20 +60,22 @@ void update(
 			mesh_to_render.m_vertices[face.b - 1],
 			mesh_to_render.m_vertices[face.c - 1]
 		};
-		//loop through each vertex and project the points of those faces
+		// loop through each vertex and project the points of those faces
 		// convert the triangle points to ints as we'll project to screen space so we're dealing with x & y pixels which are in ints
 		geo::Triangle<int> projected_triangle{ };
-		std::vector<vector::Vector3d> transformed_vertices{};
+		std::vector<vector::Vector4d> transformed_vertices{};
 		// apply transformations
 		for (const auto& vertex : face_vertices)
 		{
-			vector::Vector3d point{ vertex };
-			//rotate the point
-			point.rotate_x(mesh_to_render.m_rotation.m_x);
-			point.rotate_y(mesh_to_render.m_rotation.m_y);
-			point.rotate_z(mesh_to_render.m_rotation.m_z);
-			// move pionts away from camera
-			point.m_z += 5.0;
+			vector::Vector4d point{ vertex };
+			matrix::Matrix4x4 world_matrix{};
+			// order matters scale, then rotate and then translate
+			world_matrix *= scale_matrix;
+			world_matrix *= rotatation_matrix_z;
+			world_matrix *= rotatation_matrix_y;
+			world_matrix *= rotatation_matrix_x;
+			world_matrix *= translation_matrix;
+			point = world_matrix.mult_vec4d(point);
 			transformed_vertices.push_back(point);
 		}
 		// get avg depth of each face so we can sort and render by depth
@@ -94,7 +109,14 @@ void update(
 		std::size_t counter{ 0 };
 		for (const auto& vertex : transformed_vertices)
 		{
-			vector::Vector2d<double> projected_point{ vertex.project(fov_factor) };
+			// apply project matrix
+			vector::Vector4d projected_vertex{ projection_matrix.project(vertex) };
+			vector::Vector2d<double> projected_point{ projected_vertex.m_x, projected_vertex.m_y };
+
+			//scale first
+			projected_point.m_x *= display_mode->w / 2;
+			projected_point.m_y *= display_mode->h / 2;
+			// then translate
 			projected_point.m_x += display_mode->w / 2;
 			projected_point.m_y += display_mode->h / 2;
 			projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
@@ -198,16 +220,20 @@ int main(int argc, char* argv[])
 
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
-	constexpr const double fov_factor{ 640.0 };
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
 	geo::Mesh mesh{ ".\\assets\\cube.obj" };
 	int render_mode{ display::RenderModes::wireframe };
 	bool backface_culling{ true };
+	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
+	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
+	const double znear{ 0.1 };
+	const double zfar{ 100.0 };
+	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
 		input.process(is_running, render_mode, backface_culling, event, sdl);
-		update(mesh, triangles_to_render, fov_factor, camera_postion, &display_mode, previous_frame_time, backface_culling, sdl);
+		update(mesh, projection_matrix, triangles_to_render, camera_postion, &display_mode, previous_frame_time, backface_culling, sdl);
 		render(
 			display,
 			renderer,

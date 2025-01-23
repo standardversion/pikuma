@@ -1,6 +1,12 @@
 #pragma once
 #include "vector2d.h"
 
+// if we include vector4d.h then we'll end up with circular dependency
+namespace vector
+{
+	class Vector4d;
+}
+
 
 namespace vector
 {
@@ -8,6 +14,7 @@ namespace vector
 	{
 	public:
 		Vector3d(const double x = 0.0, const double y = 0.0, const double z = 0.0);
+		Vector3d(const Vector4d& vec4d);
 		double get_magnitude() const;
 		Vector3d& operator+=(const Vector3d& v);
 		Vector3d operator+(const Vector3d& v) const;
