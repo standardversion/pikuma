@@ -3,7 +3,7 @@
 
 namespace display
 {
-	void Display::activate_render_mode(const int render_mode, bool& render_wireframe, bool& render_vertex, bool& render_shaded) const
+	void Display::activate_render_mode(const int render_mode, bool& render_wireframe, bool& render_vertex, bool& render_shaded, bool& render_face_center, bool& render_normals) const
 	{
 		switch (render_mode)
 		{
@@ -11,26 +11,64 @@ namespace display
 			render_wireframe = true;
 			render_vertex = false;
 			render_shaded = false;
+			render_face_center = false;
+			render_normals = false;
 			break;
 		case(display::RenderModes::wireframe_vertex):
 			render_wireframe = true;
 			render_vertex = true;
 			render_shaded = false;
+			render_face_center = false;
+			render_normals = false;
+			break;
+		case(display::RenderModes::wireframe_vertex_face_center):
+			render_wireframe = true;
+			render_vertex = true;
+			render_shaded = false;
+			render_face_center = true;
+			render_normals = false;
+			break;
+		case(display::RenderModes::wireframe_vertex_face_center_normals):
+			render_wireframe = true;
+			render_vertex = true;
+			render_shaded = false;
+			render_face_center = true;
+			render_normals = true;
 			break;
 		case(display::RenderModes::shaded):
 			render_wireframe = false;
 			render_vertex = false;
 			render_shaded = true;
+			render_face_center = false;
+			render_normals = false;
 			break;
 		case(display::RenderModes::shaded_wireframe):
 			render_wireframe = true;
 			render_vertex = false;
 			render_shaded = true;
+			render_face_center = false;
+			render_normals = false;
 			break;
 		case(display::RenderModes::shaded_wireframe_vertex):
 			render_wireframe = true;
 			render_vertex = true;
 			render_shaded = true;
+			render_face_center = false;
+			render_normals = false;
+			break;
+		case(display::RenderModes::shaded_wireframe_vertex_face_center):
+			render_wireframe = true;
+			render_vertex = true;
+			render_shaded = true;
+			render_face_center = true;
+			render_normals = false;
+			break;
+		case(display::RenderModes::shaded_wireframe_vertex_face_center_normals):
+			render_wireframe = true;
+			render_vertex = true;
+			render_shaded = true;
+			render_face_center = true;
+			render_normals = true;
 			break;
 		default:
 			break;

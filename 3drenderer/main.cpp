@@ -92,7 +92,9 @@ void update(
 				continue;
 			}
 		}
-		vector::Vector3d face_normal{ mesh_to_render.get_face_normal(transformed_vertices) };
+		vector::Vector3d face_center{ mesh_to_render.get_face_center(transformed_vertices) };
+		vector::Vector3d face_normal{ mesh_to_render.get_face_normal(face_center, transformed_vertices) };
+		face_normal.normalize();
 		double light_intensity{ abs(face_normal.dot_product(light.m_direction)) };
 		projected_triangle.m_light_intensity = light_intensity;
 		// project the point
@@ -104,6 +106,21 @@ void update(
 			projected_point.m_y += display_mode->h / 2;
 			projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
 		}
+		vector::Vector2d<double> projected_center{ face_center.project(fov_factor) };
+		projected_center.m_x += display_mode->w / 2;
+		projected_center.m_y += display_mode->h / 2;
+		/*projected_triangle.m_center.m_x = static_cast<int>(projected_center.m_x);
+		projected_triangle.m_center.m_y = static_cast<int>(projected_center.m_y);*/
+		projected_triangle.m_center.m_x = projected_center.m_x;
+		projected_triangle.m_center.m_y = projected_center.m_y;
+
+		vector::Vector2d<double> projected_normal{ face_normal.project(fov_factor) };
+		projected_normal.m_x += display_mode->w / 2;
+		projected_normal.m_y += display_mode->h / 2;
+		/*projected_triangle.m_face_normal.m_x = static_cast<int>(projected_normal.m_x);
+		projected_triangle.m_face_normal.m_y = static_cast<int>(projected_normal.m_y);*/
+		projected_triangle.m_face_normal.m_x = projected_normal.m_x;
+		projected_triangle.m_face_normal.m_y = projected_normal.m_y;
 		triangles_to_render.push_back(projected_triangle);
 	}
 	std::sort(triangles_to_render.begin(), triangles_to_render.end(), [](const geo::Triangle<int>& a, const geo::Triangle<int>& b)
@@ -132,7 +149,9 @@ void render(
 	bool render_wireframe{ false };
 	bool render_vertex{ false };
 	bool render_shaded{ false };
-	display.activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded);
+	bool render_face_center{ false };
+	bool render_normals{ false };
+	display.activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
 	//display.draw_grid(colour_buffer, display_mode, edge_colour, bg_colour, grid_on);
 
 	for (auto& triangle : triangles_to_render)
@@ -171,6 +190,30 @@ void render(
 					vertex_colour
 				);
 			}
+		}
+		if (render_face_center)
+		{
+			display.draw_rect(
+				colour_buffer,
+				display_mode,
+				triangle.m_center.m_x,
+				triangle.m_center.m_y,
+				4,
+				4,
+				vertex_colour
+			);
+		}
+		if (render_normals)
+		{
+			display.draw_line(
+				colour_buffer,
+				display_mode,
+				triangle.m_center.m_x,
+				triangle.m_center.m_y,
+				triangle.m_face_normal.m_x,
+				triangle.m_face_normal.m_y,
+				edge_colour
+			);
 		}
 	}
 

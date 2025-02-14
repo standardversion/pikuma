@@ -24,6 +24,14 @@ namespace input
 				render_mode = 3;
 			else if (event.key.keysym.sym == SDLK_4)
 				render_mode = 4;
+			else if (event.key.keysym.sym == SDLK_5)
+				render_mode = 5;
+			else if (event.key.keysym.sym == SDLK_6)
+				render_mode = 6;
+			else if (event.key.keysym.sym == SDLK_7)
+				render_mode = 7;
+			else if (event.key.keysym.sym == SDLK_8)
+				render_mode = 8;
 			else if (event.key.keysym.sym == SDLK_c)
 				backface_culling = true;
 			else if (event.key.keysym.sym == SDLK_b)
