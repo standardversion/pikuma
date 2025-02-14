@@ -14,11 +14,12 @@
 #include "mesh.h"
 #include "triangle.h"
 #include "utils.h"
+#include "matrix.h"
 
 void update(
 	geo::Mesh& mesh_to_render,
+	const matrix::Matrix4x4& projection_matrix,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
-	const double fov_factor,
 	const vector::Vector3d& camera_position,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
@@ -40,6 +41,20 @@ void update(
 	mesh_to_render.m_rotation.m_x += 0.01;
 	mesh_to_render.m_rotation.m_y += 0.01;
 	mesh_to_render.m_rotation.m_z += 0.01;
+	//mesh_to_render.m_scale.m_x += 0.002;
+	//mesh_to_render.m_scale.m_y += 0.001;
+	//mesh_to_render.m_translation.m_x += 0.01;
+	// move pionts away from camera
+	mesh_to_render.m_translation.m_z = 5.0;
+
+	matrix::Matrix4x4 scale_matrix{ matrix::Matrix4x4::make_scale_matrix(mesh_to_render.m_scale.m_x, mesh_to_render.m_scale.m_y, mesh_to_render.m_scale.m_z) };
+	matrix::Matrix4x4 translation_matrix{ matrix::Matrix4x4::make_translation_matrix(mesh_to_render.m_translation.m_x, mesh_to_render.m_translation.m_y, mesh_to_render.m_translation.m_z) };
+	matrix::Matrix4x4 rotatation_matrix_x{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_x, 'x')};
+	matrix::Matrix4x4 rotatation_matrix_y{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_y, 'y') };
+	matrix::Matrix4x4 rotatation_matrix_z{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_z, 'z') };
+
+	matrix::Matrix4x4 scale_face_center_matrix{ matrix::Matrix4x4::make_scale_matrix(100.0, 100.0, 100.0) };
+
 	for (const auto& face : mesh_to_render.m_faces)
 	{
 		//each mesh face has 3 vertices stored as the index of the vertex in mesh_vertices
@@ -52,17 +67,19 @@ void update(
 		//loop through each vertex and project the points of those faces
 		// convert the triangle points to ints as we'll project to screen space so we're dealing with x & y pixels which are in ints
 		geo::Triangle<int> projected_triangle{ };
-		std::vector<vector::Vector3d> transformed_vertices{};
+		std::vector<vector::Vector4d> transformed_vertices{};
 		// apply transformations
 		for (const auto& vertex : face_vertices)
 		{
-			vector::Vector3d point{ vertex };
-			//rotate the point
-			point.rotate_x(mesh_to_render.m_rotation.m_x);
-			point.rotate_y(mesh_to_render.m_rotation.m_y);
-			point.rotate_z(mesh_to_render.m_rotation.m_z);
-			// move pionts away from camera
-			point.m_z += 5.0;
+			vector::Vector4d point{ vertex };
+			matrix::Matrix4x4 world_matrix{};
+			// order matters scale, then rotate and then translate
+			world_matrix *= scale_matrix;
+			world_matrix *= rotatation_matrix_z;
+			world_matrix *= rotatation_matrix_y;
+			world_matrix *= rotatation_matrix_x;
+			world_matrix *= translation_matrix;
+			point = world_matrix.mult_vec4d(point);
 			transformed_vertices.push_back(point);
 		}
 		// get avg depth of each face so we can sort and render by depth
@@ -101,26 +118,41 @@ void update(
 		std::size_t counter{ 0 };
 		for (const auto& vertex : transformed_vertices)
 		{
-			vector::Vector2d<double> projected_point{ vertex.project(fov_factor) };
+			// apply project matrix
+			vector::Vector4d projected_vertex{ projection_matrix.project(vertex) };
+			vector::Vector2d<double> projected_point{ projected_vertex.m_x, projected_vertex.m_y };
+
+			//scale first
+			projected_point.m_x *= display_mode->w / 2;
+			projected_point.m_y *= display_mode->h / 2;
+			// then translate
 			projected_point.m_x += display_mode->w / 2;
 			projected_point.m_y += display_mode->h / 2;
 			projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
 		}
-		vector::Vector2d<double> projected_center{ face_center.project(fov_factor) };
-		projected_center.m_x += display_mode->w / 2;
-		projected_center.m_y += display_mode->h / 2;
-		/*projected_triangle.m_center.m_x = static_cast<int>(projected_center.m_x);
-		projected_triangle.m_center.m_y = static_cast<int>(projected_center.m_y);*/
-		projected_triangle.m_center.m_x = projected_center.m_x;
-		projected_triangle.m_center.m_y = projected_center.m_y;
+		vector::Vector4d projected_center{ projection_matrix.project(face_center)};
+		/*vector::Vector4d projected_center2{ projection_matrix.project(face_center) };*/
+		vector::Vector2d<double> projected_center_point{ projected_center.m_x, projected_center.m_y };
+		projected_center_point.m_x *= display_mode->w / 2;
+		projected_center_point.m_y *= display_mode->h / 2;
+		projected_center_point.m_x += display_mode->w / 2;
+		projected_center_point.m_y += display_mode->h / 2;
+		projected_triangle.m_center.m_x = projected_center_point.m_x;
+		projected_triangle.m_center.m_y = projected_center_point.m_y;
 
-		vector::Vector2d<double> projected_normal{ face_normal.project(fov_factor) };
-		projected_normal.m_x += display_mode->w / 2;
-		projected_normal.m_y += display_mode->h / 2;
-		/*projected_triangle.m_face_normal.m_x = static_cast<int>(projected_normal.m_x);
-		projected_triangle.m_face_normal.m_y = static_cast<int>(projected_normal.m_y);*/
-		projected_triangle.m_face_normal.m_x = projected_normal.m_x;
-		projected_triangle.m_face_normal.m_y = projected_normal.m_y;
+		vector::Vector4d face_center_scaled{ face_center };
+		matrix::Matrix4x4 world_matrix{};
+		world_matrix *= scale_face_center_matrix;
+		face_center_scaled = world_matrix.mult_vec4d(face_center_scaled);
+		vector::Vector4d projected_center_scaled{ projection_matrix.project(face_center_scaled) };
+		vector::Vector2d<double> projected_center_scaled_point{ projected_center_scaled.m_x, projected_center_scaled.m_y };
+		projected_center_scaled_point.m_x *= display_mode->w / 2;
+		projected_center_scaled_point.m_y *= display_mode->h / 2;
+		projected_center_scaled_point.m_x += display_mode->w / 2;
+		projected_center_scaled_point.m_y += display_mode->h / 2;
+		projected_triangle.m_face_normal.m_x = projected_center_scaled_point.m_x - 100;
+		projected_triangle.m_face_normal.m_y = projected_center_scaled_point.m_y - 100;
+
 		triangles_to_render.push_back(projected_triangle);
 	}
 	std::sort(triangles_to_render.begin(), triangles_to_render.end(), [](const geo::Triangle<int>& a, const geo::Triangle<int>& b)
@@ -205,7 +237,16 @@ void render(
 		}
 		if (render_normals)
 		{
-			display.draw_line(
+			display.draw_rect(
+				colour_buffer,
+				display_mode,
+				triangle.m_face_normal.m_x,
+				triangle.m_face_normal.m_y,
+				4,
+				4,
+				vertex_colour
+			);
+			/*display.draw_line(
 				colour_buffer,
 				display_mode,
 				triangle.m_center.m_x,
@@ -213,7 +254,7 @@ void render(
 				triangle.m_face_normal.m_x,
 				triangle.m_face_normal.m_y,
 				edge_colour
-			);
+			);*/
 		}
 	}
 
@@ -247,16 +288,20 @@ int main(int argc, char* argv[])
 
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
-	constexpr const double fov_factor{ 640.0 };
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
 	geo::Mesh mesh{ ".\\assets\\sphere.obj" };
-	int render_mode{ display::RenderModes::shaded };
+	int render_mode{ display::RenderModes::wireframe_vertex_face_center_normals };
 	bool backface_culling{ true };
+	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
+	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
+	const double znear{ 0.1 };
+	const double zfar{ 100.0 };
+	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
 		input.process(is_running, render_mode, backface_culling, event, sdl);
-		update(mesh, triangles_to_render, fov_factor, camera_postion, &display_mode, previous_frame_time, backface_culling, directional_light, sdl);
+		update(mesh, projection_matrix, triangles_to_render, camera_postion, &display_mode, previous_frame_time, backface_culling, directional_light, sdl);
 		render(
 			display,
 			renderer,

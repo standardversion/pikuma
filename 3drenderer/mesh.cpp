@@ -50,7 +50,7 @@ namespace geo
 		}
 	}
 
-	vector::Vector3d Mesh::get_face_center(const std::vector<vector::Vector3d>& face_vertices) const
+	vector::Vector3d Mesh::get_face_center(const std::vector<vector::Vector4d>& face_vertices) const
 	{
 		return vector::Vector3d{
 			(face_vertices[0].m_x + face_vertices[1].m_x + face_vertices[2].m_x) / 3.0,
@@ -59,20 +59,24 @@ namespace geo
 		};
 	}
 
-	vector::Vector3d Mesh::get_face_normal(const std::vector<vector::Vector3d>& face_vertices) const
+	vector::Vector3d Mesh::get_face_normal(const std::vector<vector::Vector4d>& face_vertices) const
 	{
 		const vector::Vector3d face_center{ get_face_center(face_vertices) };
-		vector::Vector3d vector_am{ face_vertices[0] - face_center };
-		vector::Vector3d vector_bm{ face_vertices[1] - face_center };
+		const vector::Vector3d vertex_0{ face_vertices[0] };
+		const vector::Vector3d vertex_1{ face_vertices[1] };
+		vector::Vector3d vector_am{ vertex_0 - face_center };
+		vector::Vector3d vector_bm{ vertex_1 - face_center };
 		vector_am.normalize();
 		vector_bm.normalize();
 		return vector_bm.cross_product(vector_am);
 	}
 
-	vector::Vector3d Mesh::get_face_normal(const vector::Vector3d& face_center, const std::vector<vector::Vector3d>& face_vertices) const
+	vector::Vector3d Mesh::get_face_normal(const vector::Vector3d& face_center, const std::vector<vector::Vector4d>& face_vertices) const
 	{
-		vector::Vector3d vector_am{ face_vertices[0] - face_center };
-		vector::Vector3d vector_bm{ face_vertices[1] - face_center };
+		const vector::Vector3d vertex_0{ face_vertices[0] };
+		const vector::Vector3d vertex_1{ face_vertices[1] };
+		vector::Vector3d vector_am{ vertex_0 - face_center };
+		vector::Vector3d vector_bm{ vertex_1 - face_center };
 		vector_am.normalize();
 		vector_bm.normalize();
 		return vector_am.cross_product(vector_bm);

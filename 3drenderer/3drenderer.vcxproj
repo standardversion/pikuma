@@ -159,20 +159,24 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="light.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="matrix.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="vector3d.cpp" />
+    <ClCompile Include="vector4d.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="display.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="light.h" />
+    <ClInclude Include="matrix.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="sdlwrapper.h" />
     <ClInclude Include="triangle.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="vector2d.h" />
     <ClInclude Include="vector3d.h" />
+    <ClInclude Include="vector4d.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

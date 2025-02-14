@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "../vector3d.h"
+#include "../vector4d.h"
 #include "../vector2d.h"
 #include <math.h>
 
@@ -9,6 +10,15 @@ namespace vector3d_tests
 	TEST(vector3d, vars)
 	{
 		vector::Vector3d v3d{ 1.0, 1.0, 1.0 };
+		EXPECT_EQ(v3d.m_x, 1.0);
+		EXPECT_EQ(v3d.m_y, 1.0);
+		EXPECT_EQ(v3d.m_z, 1.0);
+	}
+
+	TEST(vector3d, cosntruct_with_vec4d)
+	{
+		vector::Vector4d v4d{ 1.0, 1.0, 1.0, 1.0 };
+		vector::Vector3d v3d{ v4d };
 		EXPECT_EQ(v3d.m_x, 1.0);
 		EXPECT_EQ(v3d.m_y, 1.0);
 		EXPECT_EQ(v3d.m_z, 1.0);
