@@ -36,6 +36,17 @@ namespace display
 			break;
 		}
 	}
+
+	std::uint32_t Display::apply_light_intensity(const std::uint32_t colour, const double percentage_factor) const
+	{
+		const std::uint32_t a = (colour & 0xFF000000);
+		const std::uint32_t r = (colour & 0x00FF0000) * percentage_factor;
+		const std::uint32_t g = (colour & 0x0000FF00) * percentage_factor;
+		const std::uint32_t b = (colour & 0x000000FF) * percentage_factor;
+
+		return std::uint32_t{ a | (r & 0x00FF0000) | (g & 0x0000FF00) | (b & 0x000000FF) };
+	}
+
 	void Display::cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, const SDLWrapper& sdl) const
 	{
 		sdl.SDL_DestroyRenderer(renderer);
@@ -189,7 +200,9 @@ namespace display
 		else {
 			vector::Vector2d<int> midpoint{ triangle.get_midpoint() };
 			geo::Triangle<int> flat_bottom_triangle{ triangle.m_points[0], triangle.m_points[1], midpoint };
+			flat_bottom_triangle.m_light_intensity = triangle.m_light_intensity;
 			geo::Triangle<int> flat_top_triangle{ triangle.m_points[1], midpoint, triangle.m_points[2] };
+			flat_top_triangle.m_light_intensity = triangle.m_light_intensity;
 			fill_flat_bottom_triangle(colour_buffer, display_mode, flat_bottom_triangle, colour);
 			fill_flat_top_triangle(colour_buffer, display_mode, flat_top_triangle, colour);
 		}
@@ -214,6 +227,7 @@ namespace display
 		double x_end_slope{ triangle.get_inverse_slope(2, 0) };
 		double x_start{ static_cast<double>(triangle.m_points[0].m_x) };
 		double x_end{ static_cast<double>(triangle.m_points[0].m_x) };
+		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
 		for (int i{ triangle.m_points[0].m_y }; i <= triangle.m_points[1].m_y; i++)
 		{
 			draw_line(
@@ -223,7 +237,7 @@ namespace display
 				i,
 				x_end,
 				i,
-				colour
+				light_colour
 			);
 			x_start += x_start_slope;
 			x_end += x_end_slope;
@@ -249,6 +263,7 @@ namespace display
 		double x_end_slope{ triangle.get_inverse_slope(2, 1) };
 		double x_start{ static_cast<double>(triangle.m_points[2].m_x) };
 		double x_end{ static_cast<double>(triangle.m_points[2].m_x) };
+		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
 		for (int i{ triangle.m_points[2].m_y }; i >= triangle.m_points[0].m_y; i--)
 		{
 			draw_line(
@@ -258,7 +273,7 @@ namespace display
 				i,
 				x_end,
 				i,
-				colour
+				light_colour
 			);
 			x_start -= x_start_slope;
 			x_end -= x_end_slope;

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include "display.h"
 #include "input.h"
+#include "light.h"
 #include "sdlwrapper.h"
 #include "vector3d.h"
 #include "vector2d.h"
@@ -22,6 +23,7 @@ void update(
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
 	const bool backface_culling,
+	const shading::Light& light,
 	const SDLWrapper& sdl
 )
 {
@@ -90,6 +92,9 @@ void update(
 				continue;
 			}
 		}
+		vector::Vector3d face_normal{ mesh_to_render.get_face_normal(transformed_vertices) };
+		double light_intensity{ abs(face_normal.dot_product(light.m_direction)) };
+		projected_triangle.m_light_intensity = light_intensity;
 		// project the point
 		std::size_t counter{ 0 };
 		for (const auto& vertex : transformed_vertices)
@@ -195,19 +200,20 @@ int main(int argc, char* argv[])
 	constexpr const std::uint32_t edge_colour{ 0xFFFFFFFF };
 	constexpr const std::uint32_t vertex_colour{ 0xFFFFFF00 };
 	constexpr const std::uint32_t fill_colour{ 0xFF0000FF };
+	const shading::Light directional_light{};
 
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
 	constexpr const double fov_factor{ 640.0 };
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\cube.obj" };
-	int render_mode{ display::RenderModes::wireframe };
+	geo::Mesh mesh{ ".\\assets\\sphere.obj" };
+	int render_mode{ display::RenderModes::shaded };
 	bool backface_culling{ true };
 	while (is_running)
 	{
 		input.process(is_running, render_mode, backface_culling, event, sdl);
-		update(mesh, triangles_to_render, fov_factor, camera_postion, &display_mode, previous_frame_time, backface_culling, sdl);
+		update(mesh, triangles_to_render, fov_factor, camera_postion, &display_mode, previous_frame_time, backface_culling, directional_light, sdl);
 		render(
 			display,
 			renderer,

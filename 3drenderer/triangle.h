@@ -24,6 +24,7 @@ namespace geo
 
 		std::vector<vector::Vector2d<T>> m_points;
 		double m_avg_depth{0.0};
+		double m_light_intensity{ 1.0 };
 	};
 
 	template <typename T>

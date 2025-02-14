@@ -27,6 +27,7 @@ namespace display
 	public:
 		virtual ~Display() = default;
 		virtual void activate_render_mode(const int render_mode, bool& render_wireframe, bool& render_vertex, bool& render_shaded) const;
+		virtual std::uint32_t apply_light_intensity(const std::uint32_t color, const double percentage_factor) const;
 		virtual void cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, const SDLWrapper& sdl) const;
 		virtual void clear_colour_buffer(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const;
 		virtual void draw_grid(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on) const;
