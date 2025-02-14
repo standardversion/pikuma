@@ -61,14 +61,18 @@ namespace geo
 
 	vector::Vector3d Mesh::get_face_normal(const std::vector<vector::Vector4d>& face_vertices) const
 	{
-		const vector::Vector3d face_center{ get_face_center(face_vertices) };
-		const vector::Vector3d vertex_0{ face_vertices[0] };
-		const vector::Vector3d vertex_1{ face_vertices[1] };
-		vector::Vector3d vector_am{ vertex_0 - face_center };
-		vector::Vector3d vector_bm{ vertex_1 - face_center };
-		vector_am.normalize();
-		vector_bm.normalize();
-		return vector_bm.cross_product(vector_am);
+		vector::Vector3d vector_a{ face_vertices[0] };  /*   A   */
+		vector::Vector3d vector_b{ face_vertices[1] };  /*  / \  */
+		vector::Vector3d vector_c{ face_vertices[2] };  /* C---B */
+		// get vector subtraction of B-A and C-A
+		vector::Vector3d vector_ab{ vector_b - vector_a };
+		vector::Vector3d vector_ac{ vector_c - vector_a };
+		vector_ab.normalize();
+		vector_ac.normalize();
+		// compute the normal at the vertex (using cross product to find perpendicular)
+		// order of the cross product depends on the coordinate system
+		// since this is a left handed system our order of cross product is ab x ac
+		return vector_ab.cross_product(vector_ac);
 	}
 
 	vector::Vector3d Mesh::get_face_normal(const vector::Vector3d& face_center, const std::vector<vector::Vector4d>& face_vertices) const

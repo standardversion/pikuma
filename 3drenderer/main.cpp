@@ -25,6 +25,8 @@ void update(
 	int& previous_frame_time,
 	const bool backface_culling,
 	const shading::Light& light,
+	const bool render_face_center,
+	const bool render_normals,
 	const SDLWrapper& sdl
 )
 {
@@ -95,21 +97,10 @@ void update(
 
 			if (backface_culling) {
 				// check backface culling
-				vector::Vector3d vector_a{ transformed_vertices[0] };  /*   A   */
-				vector::Vector3d vector_b{ transformed_vertices[1] };  /*  / \  */
-				vector::Vector3d vector_c{ transformed_vertices[2] };  /* C---B */
-				// get vector subtraction of B-A and C-A
-				vector::Vector3d vector_ab{ vector_b - vector_a };
-				vector::Vector3d vector_ac{ vector_c - vector_a };
-				vector_ab.normalize();
-				vector_ac.normalize();
-				// compute the normal at the vertex (using cross product to find perpendicular)
-				// order of the cross product depends on the coordinate system
-				// since this is a left handed system our order of cross product is ab x ac
-				vector::Vector3d normal{ vector_ab.cross_product(vector_ac) };
+				vector::Vector3d normal{ mesh_to_render.get_face_normal(transformed_vertices)};
 				normal.normalize();
 				// find the camera ray ie the vector between a point in the triangle and the camera origin
-				vector::Vector3d camera_ray{ camera_position - vector_a };
+				vector::Vector3d camera_ray{ camera_position - transformed_vertices[0] };
 
 				// calculate how aligned the camera ray is with the face normal (using dot product)
 				if (camera_ray.dot_product(normal) < 0)
@@ -117,8 +108,8 @@ void update(
 					continue;
 				}
 			}
-			vector::Vector3d face_center{ mesh_to_render.get_face_center(transformed_vertices) };
-			vector::Vector3d face_normal{ mesh_to_render.get_face_normal(face_center, transformed_vertices) };
+			
+			vector::Vector3d face_normal{ mesh_to_render.get_face_normal(transformed_vertices) };
 			face_normal.normalize();
 			double light_intensity{ abs(face_normal.dot_product(light.m_direction)) };
 			projected_triangle.m_light_intensity = light_intensity;
@@ -138,43 +129,64 @@ void update(
 				projected_point.m_y += display_mode->h / 2;
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
 			}
-			vector::Vector4d projected_center{ projection_matrix.project(face_center) };
-			vector::Vector4d projected_center2{ projection_matrix.project(face_center) };
-			vector::Vector2d<double> projected_center_point{ projected_center.m_x, projected_center.m_y };
-			projected_center_point.m_x *= display_mode->w / 2;
-			projected_center_point.m_y *= display_mode->h / 2;
-			projected_center_point.m_x += display_mode->w / 2;
-			projected_center_point.m_y += display_mode->h / 2;
-			projected_triangle.m_center.m_x = projected_center_point.m_x;
-			projected_triangle.m_center.m_y = projected_center_point.m_y;
+			if (render_face_center || render_normals)
+			{
+				vector::Vector3d face_center{ mesh_to_render.get_face_center(transformed_vertices) };
+				vector::Vector4d projected_center{ projection_matrix.project(face_center) };
 
+				vector::Vector2d<double> projected_center_point{ projected_center.m_x, projected_center.m_y };
+				projected_center_point.m_x *= display_mode->w / 2;
+				projected_center_point.m_y *= display_mode->h / 2;
+				projected_center_point.m_x += display_mode->w / 2;
+				projected_center_point.m_y += display_mode->h / 2;
+				projected_triangle.m_center.m_x = projected_center_point.m_x;
+				projected_triangle.m_center.m_y = projected_center_point.m_y;
+				if (render_normals)
+				{
+					// move the normal to the center of the face
+					face_normal.m_x += face_center.m_x;
+					face_normal.m_y += face_center.m_y;
+					face_normal.m_z += face_center.m_z;
+					face_normal.normalize();
+
+					vector::Vector4d projected_face_normal{ projection_matrix.project(face_normal) };
+					vector::Vector2d<double> projected_face_normal_point{ projected_face_normal.m_x / 2, projected_face_normal.m_y / 2 }; // scale down the normal
+					projected_face_normal_point.m_x *= display_mode->w / 2;
+					projected_face_normal_point.m_y *= display_mode->h / 2;
+					projected_face_normal_point.m_x += display_mode->w / 2;
+					projected_face_normal_point.m_y += display_mode->h / 2;
+					projected_triangle.m_face_normal.m_x = projected_face_normal_point.m_x;
+					projected_triangle.m_face_normal.m_y = projected_face_normal_point.m_y;
+				}
+			}
+			// the wrong way to do this!
 			// to draw face normal we scale the mesh up
 			// find the center of the scaled triangle
 			// and then draw a line between the non scaled center
 			// and the scaled center
-			std::vector<vector::Vector4d> transformed_vertices_scaled{ };
-			for (const auto& vertex : face_vertices)
-			{
-				vector::Vector4d point{ vertex };
-				matrix::Matrix4x4 world_matrix{};
-				// order matters scale, then rotate and then translate
-				world_matrix *= scale_face_center_matrix;
-				world_matrix *= rotatation_matrix_z;
-				world_matrix *= rotatation_matrix_y;
-				world_matrix *= rotatation_matrix_x;
-				world_matrix *= translation_matrix;
-				point = world_matrix.mult_vec4d(point);
-				transformed_vertices_scaled.push_back(point);
-			}
-			vector::Vector3d face_center_scaled{ mesh_to_render.get_face_center(transformed_vertices_scaled) };
-			vector::Vector4d projected_center_scaled{ projection_matrix.project(face_center_scaled) };
-			vector::Vector2d<double> projected_center_scaled_point{ projected_center_scaled.m_x, projected_center_scaled.m_y };
-			projected_center_scaled_point.m_x *= display_mode->w / 2;
-			projected_center_scaled_point.m_y *= display_mode->h / 2;
-			projected_center_scaled_point.m_x += display_mode->w / 2;
-			projected_center_scaled_point.m_y += display_mode->h / 2;
-			projected_triangle.m_face_normal.m_x = projected_center_scaled_point.m_x;
-			projected_triangle.m_face_normal.m_y = projected_center_scaled_point.m_y;
+			//std::vector<vector::Vector4d> transformed_vertices_scaled{ };
+			//for (const auto& vertex : face_vertices)
+			//{
+			//	vector::Vector4d point{ vertex };
+			//	matrix::Matrix4x4 world_matrix{};
+			//	// order matters scale, then rotate and then translate
+			//	world_matrix *= scale_face_center_matrix;
+			//	world_matrix *= rotatation_matrix_z;
+			//	world_matrix *= rotatation_matrix_y;
+			//	world_matrix *= rotatation_matrix_x;
+			//	world_matrix *= translation_matrix;
+			//	point = world_matrix.mult_vec4d(point);
+			//	transformed_vertices_scaled.push_back(point);
+			//}
+			//vector::Vector3d face_center_scaled{ mesh_to_render.get_face_center(transformed_vertices_scaled) };
+			//vector::Vector4d projected_center_scaled{ projection_matrix.project(face_center_scaled) };
+			//vector::Vector2d<double> projected_center_scaled_point{ projected_center_scaled.m_x, projected_center_scaled.m_y };
+			//projected_center_scaled_point.m_x *= display_mode->w / 2;
+			//projected_center_scaled_point.m_y *= display_mode->h / 2;
+			//projected_center_scaled_point.m_x += display_mode->w / 2;
+			//projected_center_scaled_point.m_y += display_mode->h / 2;
+			/*projected_triangle.m_face_normal.m_x = projected_center_scaled_point.m_x;
+			projected_triangle.m_face_normal.m_y = projected_center_scaled_point.m_y;*/
 
 			triangles_to_render.push_back(projected_triangle);
 		}
@@ -203,14 +215,14 @@ void render(
 	const int grid_on,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
 	const int render_mode,
+	bool& render_face_center,
+	bool& render_normals,
 	const SDLWrapper& sdl
 )
 {
 	bool render_wireframe{ false };
 	bool render_vertex{ false };
 	bool render_shaded{ false };
-	bool render_face_center{ false };
-	bool render_normals{ false };
 	display.activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
 	//display.draw_grid(colour_buffer, display_mode, edge_colour, bg_colour, grid_on);
 
@@ -314,6 +326,8 @@ int main(int argc, char* argv[])
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
 	int render_mode{ display::RenderModes::wireframe_vertex_face_center_normals };
+	bool render_face_center{ false };
+	bool render_normals{ false };
 	bool backface_culling{ true };
 	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
 	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
@@ -323,7 +337,18 @@ int main(int argc, char* argv[])
 	while (is_running)
 	{
 		input.process(is_running, render_mode, backface_culling, event, sdl);
-		update(meshes, projection_matrix, triangles_to_render, camera_postion, &display_mode, previous_frame_time, backface_culling, directional_light, sdl);
+		update(
+			meshes,
+			projection_matrix,
+			triangles_to_render,
+			camera_postion,
+			&display_mode,
+			previous_frame_time,
+			backface_culling,
+			directional_light,
+			render_face_center,
+			render_normals,
+			sdl);
 		render(
 			display,
 			renderer,
@@ -337,6 +362,8 @@ int main(int argc, char* argv[])
 			10,
 			triangles_to_render,
 			render_mode,
+			render_face_center,
+			render_normals,
 			sdl
 		);
 	}
