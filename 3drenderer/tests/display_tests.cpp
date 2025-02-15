@@ -423,8 +423,11 @@ namespace display_tests
 		{
 		public:
 			MOCK_METHOD(void, draw_line, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour), (const, override));
+			MOCK_METHOD(std::uint32_t, apply_light_intensity, (const std::uint32_t colour, const double percentage_factor), (const, override));
 		};
 		MockDisplay mock_dsp;
+		EXPECT_CALL(mock_dsp, apply_light_intensity(ln, triangle.m_light_intensity))
+			.WillOnce(::testing::Return(ln));
 		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 0.0, 0, 0.0, 0, ln))
 			.Times(1);
 		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 2.0, 1, 4.0, 1, ln))
@@ -459,8 +462,11 @@ namespace display_tests
 		{
 		public:
 			MOCK_METHOD(void, draw_line, (std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour), (const, override));
+			MOCK_METHOD(std::uint32_t, apply_light_intensity, (const std::uint32_t colour, const double percentage_factor), (const, override));
 		};
 		MockDisplay mock_dsp;
+		EXPECT_CALL(mock_dsp, apply_light_intensity(ln, triangle.m_light_intensity))
+			.WillOnce(::testing::Return(ln));
 		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 15.0, 10, 15.0, 10, ln))
 			.Times(1);
 		EXPECT_CALL(mock_dsp, draw_line(colour_buffer, &display_mode, 14.0, 9, 16.0, 9, ln))
@@ -596,7 +602,7 @@ namespace display_tests
 
 		vector::Vector2d<double> projected_point{ dsp.project_vec4d(&display_mode, m, vec4d) };
 		EXPECT_EQ(projected_point.m_x, 10100);
-		EXPECT_EQ(projected_point.m_y, 10100);
+		EXPECT_EQ(projected_point.m_y, -9900);
 	}
 
 	TEST(display_test, setup_init_fail)

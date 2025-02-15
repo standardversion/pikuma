@@ -48,9 +48,9 @@ void update(
 			mesh_to_render.m_scale.m_y = 1.2;
 			mesh_to_render.m_scale.m_z = 1.2;
 		}
-		mesh_to_render.m_rotation.m_x += 0.01;
+		//mesh_to_render.m_rotation.m_x += 0.01;
 		mesh_to_render.m_rotation.m_y += 0.01;
-		mesh_to_render.m_rotation.m_z += 0.01;
+		//mesh_to_render.m_rotation.m_z += 0.01;
 		/*mesh_to_render.m_scale.m_x += 0.01;
 		mesh_to_render.m_scale.m_y += 0.01;
 		mesh_to_render.m_scale.m_z += 0.01;*/
@@ -304,7 +304,7 @@ int main(int argc, char* argv[])
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\sphere.obj" };
+	geo::Mesh mesh{ ".\\assets\\monkey.obj" };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };

@@ -371,6 +371,9 @@ namespace display
 		//scale first
 		projected_point.m_x *= display_mode->w / 2;
 		projected_point.m_y *= display_mode->h / 2;
+		// invert the y values to account for flipped screen y coordinate
+		// in the model, y values increase as we go up, while on the screen the y increases as we go down
+		projected_point.m_y *= -1.0;
 		// then translate
 		projected_point.m_x += display_mode->w / 2;
 		projected_point.m_y += display_mode->h / 2;
