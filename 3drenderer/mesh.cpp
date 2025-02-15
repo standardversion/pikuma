@@ -75,4 +75,30 @@ namespace geo
 		return vector_ab.cross_product(vector_ac);
 	}
 
+	std::vector<vector::Vector3d> Mesh::get_per_vertex_normals(const std::vector<vector::Vector4d>& face_vertices) const
+	{
+		std::vector<vector::Vector3d> normals{};
+		vector::Vector3d vector_a{ face_vertices[0] };  /*   A   */
+		vector::Vector3d vector_b{ face_vertices[1] };  /*  / \  */
+		vector::Vector3d vector_c{ face_vertices[2] };  /* C---B */
+		// get vector subtraction of B-A and C-A
+		vector::Vector3d vector_ab{ vector_b - vector_a };
+		vector::Vector3d vector_ac{ vector_c - vector_a };
+		// get vector subtraction of A-B and C-B
+		vector::Vector3d vector_ba{ vector_a - vector_b };
+		vector::Vector3d vector_bc{ vector_c - vector_b };
+		vector::Vector3d vector_ca{ vector_a - vector_c };
+		vector::Vector3d vector_cb{ vector_b - vector_c };
+		// for the cross products go clockwise, so cross the vector formed to the of the vertex with the preceeding vertex
+		vector_ab.normalize();
+		vector_ac.normalize();
+		normals.push_back(vector_ab.cross_product(vector_ac)); // normal at vertex A
+		vector_bc.normalize();
+		vector_ba.normalize();
+		normals.push_back(vector_bc.cross_product(vector_ba)); // normal at vertex B
+		vector_ca.normalize();
+		vector_cb.normalize();
+		normals.push_back(vector_ca.cross_product(vector_cb)); // normal at vertex C
+		return normals;
+	}
 }

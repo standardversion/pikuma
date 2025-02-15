@@ -48,9 +48,9 @@ void update(
 			mesh_to_render.m_scale.m_y = 1.2;
 			mesh_to_render.m_scale.m_z = 1.2;
 		}
-		//mesh_to_render.m_rotation.m_x += 0.01;
+		mesh_to_render.m_rotation.m_x += 0.01;
 		mesh_to_render.m_rotation.m_y += 0.01;
-		//mesh_to_render.m_rotation.m_z += 0.01;
+		mesh_to_render.m_rotation.m_z += 0.01;
 		/*mesh_to_render.m_scale.m_x += 0.01;
 		mesh_to_render.m_scale.m_y += 0.01;
 		mesh_to_render.m_scale.m_z += 0.01;*/
@@ -95,24 +95,19 @@ void update(
 			}
 			// get avg depth of each face so we can sort and render by depth
 			projected_triangle.m_avg_depth = (transformed_vertices[0].m_z + transformed_vertices[1].m_z + transformed_vertices[2].m_z) / 3.0;
-
+			std::vector<vector::Vector3d> per_vertex_normals{ mesh_to_render.get_per_vertex_normals(transformed_vertices) };
 			if (backface_culling) {
-				// check backface culling
-				vector::Vector3d normal{ mesh_to_render.get_face_normal(transformed_vertices)};
-				normal.normalize();
 				// find the camera ray ie the vector between a point in the triangle and the camera origin
 				vector::Vector3d camera_ray{ camera_position - transformed_vertices[0] };
 
 				// calculate how aligned the camera ray is with the face normal (using dot product)
-				if (camera_ray.dot_product(normal) < 0)
+				if (camera_ray.dot_product(per_vertex_normals[0]) < 0)
 				{
 					continue;
 				}
 			}
 			// calculate light intensity at the face			
-			vector::Vector3d face_normal{ mesh_to_render.get_face_normal(transformed_vertices) };
-			face_normal.normalize();
-			double light_intensity{ abs(face_normal.dot_product(light.m_direction)) };
+			double light_intensity{ abs(per_vertex_normals[0].dot_product(light.m_direction))};
 			projected_triangle.m_light_intensity = light_intensity;
 
 			// project the point
@@ -130,6 +125,7 @@ void update(
 				projected_triangle.m_center.m_y = projected_center_point.m_y;
 				if (render_normals)
 				{
+					vector::Vector3d face_normal{ per_vertex_normals[0] };
 					// move the normal to the center of the face
 					face_normal.m_x += face_center.m_x;
 					face_normal.m_y += face_center.m_y;
@@ -304,7 +300,7 @@ int main(int argc, char* argv[])
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\monkey.obj" };
+	geo::Mesh mesh{ ".\\assets\\sphere.obj" };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
