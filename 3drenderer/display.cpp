@@ -362,6 +362,21 @@ namespace display
 		return true;
 	}
 
+	vector::Vector2d<double> Display::project_vec4d(const SDL_DisplayMode* display_mode, const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d) const
+	{
+		// apply project matrix
+		vector::Vector4d projected_vertex{ projection_matrix.project(vec4d) };
+		vector::Vector2d<double> projected_point{ projected_vertex.m_x, projected_vertex.m_y };
+
+		//scale first
+		projected_point.m_x *= display_mode->w / 2;
+		projected_point.m_y *= display_mode->h / 2;
+		// then translate
+		projected_point.m_x += display_mode->w / 2;
+		projected_point.m_y += display_mode->h / 2;
+		return projected_point;
+	}
+
 	void Display::render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer, const SDLWrapper& sdl) const
 	{
 		// update the texture with the contents of the colour buffer

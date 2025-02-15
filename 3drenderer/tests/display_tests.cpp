@@ -4,6 +4,7 @@
 #include "sdl_mock.h"
 #include "../display.h"
 #include "../vector2d.h"
+#include "../vector4d.h"
 #include <SDL.h>
 
 namespace display_tests
@@ -20,27 +21,71 @@ namespace display_tests
 		bool render_wireframe{ false };
 		bool render_vertex{ false };
 		bool render_shaded{ false };
+		bool render_face_center{ false };
+		bool render_normals{ false };
 
-		dsp.activate_render_mode(0, render_wireframe, render_vertex, render_shaded);
+		dsp.activate_render_mode(0, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
 		EXPECT_EQ(render_wireframe, true);
 		EXPECT_EQ(render_vertex, false);
 		EXPECT_EQ(render_shaded, false);
-		dsp.activate_render_mode(1, render_wireframe, render_vertex, render_shaded);
+		EXPECT_EQ(render_face_center, false);
+		EXPECT_EQ(render_normals, false);
+		dsp.activate_render_mode(1, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
 		EXPECT_EQ(render_wireframe, true);
 		EXPECT_EQ(render_vertex, true);
 		EXPECT_EQ(render_shaded, false);
-		dsp.activate_render_mode(2, render_wireframe, render_vertex, render_shaded);
+		EXPECT_EQ(render_face_center, false);
+		EXPECT_EQ(render_normals, false);
+		dsp.activate_render_mode(2, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
+		EXPECT_EQ(render_wireframe, true);
+		EXPECT_EQ(render_vertex, true);
+		EXPECT_EQ(render_shaded, false);
+		EXPECT_EQ(render_face_center, true);
+		EXPECT_EQ(render_normals, false);
+		dsp.activate_render_mode(3, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
+		EXPECT_EQ(render_wireframe, true);
+		EXPECT_EQ(render_vertex, true);
+		EXPECT_EQ(render_shaded, false);
+		EXPECT_EQ(render_face_center, true);
+		EXPECT_EQ(render_normals, true);
+		dsp.activate_render_mode(4, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
 		EXPECT_EQ(render_wireframe, false);
 		EXPECT_EQ(render_vertex, false);
 		EXPECT_EQ(render_shaded, true);
-		dsp.activate_render_mode(3, render_wireframe, render_vertex, render_shaded);
+		EXPECT_EQ(render_face_center, false);
+		EXPECT_EQ(render_normals, false);
+		dsp.activate_render_mode(5, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
 		EXPECT_EQ(render_wireframe, true);
 		EXPECT_EQ(render_vertex, false);
 		EXPECT_EQ(render_shaded, true);
-		dsp.activate_render_mode(4, render_wireframe, render_vertex, render_shaded);
+		EXPECT_EQ(render_face_center, false);
+		EXPECT_EQ(render_normals, false);
+		dsp.activate_render_mode(6, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
 		EXPECT_EQ(render_wireframe, true);
 		EXPECT_EQ(render_vertex, true);
 		EXPECT_EQ(render_shaded, true);
+		EXPECT_EQ(render_face_center, false);
+		EXPECT_EQ(render_normals, false);
+		dsp.activate_render_mode(7, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
+		EXPECT_EQ(render_wireframe, true);
+		EXPECT_EQ(render_vertex, true);
+		EXPECT_EQ(render_shaded, true);
+		EXPECT_EQ(render_face_center, true);
+		EXPECT_EQ(render_normals, false);
+		dsp.activate_render_mode(8, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
+		EXPECT_EQ(render_wireframe, true);
+		EXPECT_EQ(render_vertex, true);
+		EXPECT_EQ(render_shaded, true);
+		EXPECT_EQ(render_face_center, true);
+		EXPECT_EQ(render_normals, true);
+	}
+
+	TEST(display_test, apply_light_intensity_success)
+	{
+		std::uint32_t colour{ 0xFFFFFFFF };
+		constexpr const double factor{ 10.0 };
+		std::uint32_t out_colour{ dsp.apply_light_intensity(colour, factor) };
+		EXPECT_EQ(out_colour, 4294375158);
 	}
 
 	TEST(display_test, cleanup_success)
@@ -513,6 +558,45 @@ namespace display_tests
 		dsp.render_colour_buffer(colour_buffer_texture, colour_buffer, &display_mode, renderer, mock_sdl);
 		delete[] colour_buffer;
 		colour_buffer = nullptr;
+	}
+
+	TEST(display_test, project_vec4d_success)
+	{
+		display_mode.w = 200;
+		display_mode.h = 200;
+		vector::Vector4d vec4d{ 90, 108, 126, 144 };
+		vector::Vector4d vec4d_r{ 100, 100, 1, 0 };
+		class MockMatrix : public matrix::Matrix4x4
+		{
+		public:
+			MOCK_METHOD(vector::Vector4d, project, (const vector::Vector4d& vec4d), (const, override));
+		};
+		MockMatrix m{};
+		m.m_matrix[0][0] = 1;
+		m.m_matrix[0][1] = 2;
+		m.m_matrix[0][2] = 3;
+		m.m_matrix[0][3] = 4;
+
+		m.m_matrix[1][0] = 5;
+		m.m_matrix[1][1] = 6;
+		m.m_matrix[1][2] = 7;
+		m.m_matrix[1][3] = 8;
+
+		m.m_matrix[2][0] = 9;
+		m.m_matrix[2][1] = 10;
+		m.m_matrix[2][2] = 11;
+		m.m_matrix[2][3] = 12;
+
+		m.m_matrix[3][0] = 13;
+		m.m_matrix[3][1] = 14;
+		m.m_matrix[3][2] = 15;
+		m.m_matrix[3][3] = 16;
+		EXPECT_CALL(m, project(::testing::_))
+			.WillOnce(::testing::Return(vec4d_r));
+
+		vector::Vector2d<double> projected_point{ dsp.project_vec4d(&display_mode, m, vec4d) };
+		EXPECT_EQ(projected_point.m_x, 10100);
+		EXPECT_EQ(projected_point.m_y, 10100);
 	}
 
 	TEST(display_test, setup_init_fail)

@@ -21,6 +21,7 @@ void update(
 	const matrix::Matrix4x4& projection_matrix,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
 	const vector::Vector3d& camera_position,
+	const display::Display& display,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
 	const bool backface_culling,
@@ -108,37 +109,23 @@ void update(
 					continue;
 				}
 			}
-			
+			// calculate light intensity at the face			
 			vector::Vector3d face_normal{ mesh_to_render.get_face_normal(transformed_vertices) };
 			face_normal.normalize();
 			double light_intensity{ abs(face_normal.dot_product(light.m_direction)) };
 			projected_triangle.m_light_intensity = light_intensity;
+
 			// project the point
-			std::size_t counter{ 0 };
 			for (const auto& vertex : transformed_vertices)
 			{
-				// apply project matrix
-				vector::Vector4d projected_vertex{ projection_matrix.project(vertex) };
-				vector::Vector2d<double> projected_point{ projected_vertex.m_x, projected_vertex.m_y };
-
-				//scale first
-				projected_point.m_x *= display_mode->w / 2;
-				projected_point.m_y *= display_mode->h / 2;
-				// then translate
-				projected_point.m_x += display_mode->w / 2;
-				projected_point.m_y += display_mode->h / 2;
+				vector::Vector2d<double> projected_point{ display.project_vec4d(display_mode, projection_matrix, vertex) };
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
 			}
 			if (render_face_center || render_normals)
 			{
 				vector::Vector3d face_center{ mesh_to_render.get_face_center(transformed_vertices) };
-				vector::Vector4d projected_center{ projection_matrix.project(face_center) };
+				vector::Vector2d<double> projected_center_point{ display.project_vec4d(display_mode, projection_matrix, face_center) };
 
-				vector::Vector2d<double> projected_center_point{ projected_center.m_x, projected_center.m_y };
-				projected_center_point.m_x *= display_mode->w / 2;
-				projected_center_point.m_y *= display_mode->h / 2;
-				projected_center_point.m_x += display_mode->w / 2;
-				projected_center_point.m_y += display_mode->h / 2;
 				projected_triangle.m_center.m_x = projected_center_point.m_x;
 				projected_triangle.m_center.m_y = projected_center_point.m_y;
 				if (render_normals)
@@ -148,13 +135,9 @@ void update(
 					face_normal.m_y += face_center.m_y;
 					face_normal.m_z += face_center.m_z;
 					face_normal.normalize();
+			
+					vector::Vector2d<double> projected_face_normal_point{ display.project_vec4d(display_mode, projection_matrix, face_normal) };
 
-					vector::Vector4d projected_face_normal{ projection_matrix.project(face_normal) };
-					vector::Vector2d<double> projected_face_normal_point{ projected_face_normal.m_x / 2, projected_face_normal.m_y / 2 }; // scale down the normal
-					projected_face_normal_point.m_x *= display_mode->w / 2;
-					projected_face_normal_point.m_y *= display_mode->h / 2;
-					projected_face_normal_point.m_x += display_mode->w / 2;
-					projected_face_normal_point.m_y += display_mode->h / 2;
 					projected_triangle.m_face_normal.m_x = projected_face_normal_point.m_x;
 					projected_triangle.m_face_normal.m_y = projected_face_normal_point.m_y;
 				}
@@ -325,7 +308,7 @@ int main(int argc, char* argv[])
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
-	int render_mode{ display::RenderModes::wireframe_vertex_face_center_normals };
+	int render_mode{ display::RenderModes::wireframe };
 	bool render_face_center{ false };
 	bool render_normals{ false };
 	bool backface_culling{ true };
@@ -342,6 +325,7 @@ int main(int argc, char* argv[])
 			projection_matrix,
 			triangles_to_render,
 			camera_postion,
+			display,
 			&display_mode,
 			previous_frame_time,
 			backface_culling,

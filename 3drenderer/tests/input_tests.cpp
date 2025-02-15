@@ -135,4 +135,60 @@ namespace input_tests
 		input.process(is_running, render_mode, backface_culling, event, mock_sdl);
 		EXPECT_EQ(render_mode, 4);
 	}
+
+	TEST(input_test, process_sdl_5_key)
+	{
+		bool is_running{ true };
+		bool backface_culling{ true };
+		int render_mode{ 0 };
+		event.type = SDL_KEYDOWN;
+		event.key.keysym.sym = SDLK_5;
+		EXPECT_CALL(mock_sdl, SDL_PollEvent(&event))
+			.WillOnce(::testing::Return(0));
+
+		input.process(is_running, render_mode, backface_culling, event, mock_sdl);
+		EXPECT_EQ(render_mode, 5);
+	}
+
+	TEST(input_test, process_sdl_6_key)
+	{
+		bool is_running{ true };
+		bool backface_culling{ true };
+		int render_mode{ 0 };
+		event.type = SDL_KEYDOWN;
+		event.key.keysym.sym = SDLK_6;
+		EXPECT_CALL(mock_sdl, SDL_PollEvent(&event))
+			.WillOnce(::testing::Return(0));
+
+		input.process(is_running, render_mode, backface_culling, event, mock_sdl);
+		EXPECT_EQ(render_mode, 6);
+	}
+
+	TEST(input_test, process_sdl_7_key)
+	{
+		bool is_running{ true };
+		bool backface_culling{ true };
+		int render_mode{ 0 };
+		event.type = SDL_KEYDOWN;
+		event.key.keysym.sym = SDLK_7;
+		EXPECT_CALL(mock_sdl, SDL_PollEvent(&event))
+			.WillOnce(::testing::Return(0));
+
+		input.process(is_running, render_mode, backface_culling, event, mock_sdl);
+		EXPECT_EQ(render_mode, 7);
+	}
+
+	TEST(input_test, process_sdl_8_key)
+	{
+		bool is_running{ true };
+		bool backface_culling{ true };
+		int render_mode{ 0 };
+		event.type = SDL_KEYDOWN;
+		event.key.keysym.sym = SDLK_8;
+		EXPECT_CALL(mock_sdl, SDL_PollEvent(&event))
+			.WillOnce(::testing::Return(0));
+
+		input.process(is_running, render_mode, backface_culling, event, mock_sdl);
+		EXPECT_EQ(render_mode, 8);
+	}
 }

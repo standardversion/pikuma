@@ -15,7 +15,7 @@ namespace matrix
 		Matrix4x4& operator*=(const Matrix4x4& m);
 		
 		virtual vector::Vector4d mult_vec4d(const vector::Vector4d& vec4d) const;
-		vector::Vector4d project(const vector::Vector4d& vec4d) const;
+		virtual vector::Vector4d project(const vector::Vector4d& vec4d) const;
 
 		std::vector<std::vector<double>> m_matrix;
 	};

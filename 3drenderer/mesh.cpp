@@ -75,14 +75,4 @@ namespace geo
 		return vector_ab.cross_product(vector_ac);
 	}
 
-	vector::Vector3d Mesh::get_face_normal(const vector::Vector3d& face_center, const std::vector<vector::Vector4d>& face_vertices) const
-	{
-		const vector::Vector3d vertex_0{ face_vertices[0] };
-		const vector::Vector3d vertex_1{ face_vertices[1] };
-		vector::Vector3d vector_am{ vertex_0 - face_center };
-		vector::Vector3d vector_bm{ vertex_1 - face_center };
-		vector_am.normalize();
-		vector_bm.normalize();
-		return vector_am.cross_product(vector_bm);
-	}
 }
