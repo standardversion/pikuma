@@ -237,10 +237,13 @@ namespace display
 		}
 		else {
 			vector::Vector2d<int> midpoint{ triangle.get_midpoint() };
+			double mp_lt_intesity{ triangle.get_light_intensity_at_mp() };
 			geo::Triangle<int> flat_bottom_triangle{ triangle.m_points[0], triangle.m_points[1], midpoint };
-			flat_bottom_triangle.m_light_intensity = triangle.m_light_intensity;
+			flat_bottom_triangle.m_per_vtx_lt_intensity = triangle.m_per_vtx_lt_intensity;
+			flat_bottom_triangle.m_per_vtx_lt_intensity[2] = mp_lt_intesity;
 			geo::Triangle<int> flat_top_triangle{ triangle.m_points[1], midpoint, triangle.m_points[2] };
-			flat_top_triangle.m_light_intensity = triangle.m_light_intensity;
+			flat_top_triangle.m_per_vtx_lt_intensity = triangle.m_per_vtx_lt_intensity;
+			flat_top_triangle.m_per_vtx_lt_intensity[1] = mp_lt_intesity;
 			fill_flat_bottom_triangle(colour_buffer, display_mode, flat_bottom_triangle, colour);
 			fill_flat_top_triangle(colour_buffer, display_mode, flat_top_triangle, colour);
 		}
@@ -265,7 +268,7 @@ namespace display
 		double x_end_slope{ triangle.get_inverse_slope(2, 0) };
 		double x_start{ static_cast<double>(triangle.m_points[0].m_x) };
 		double x_end{ static_cast<double>(triangle.m_points[0].m_x) };
-		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
+		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_per_vtx_lt_intensity[0])};
 		for (int i{ triangle.m_points[0].m_y }; i <= triangle.m_points[1].m_y; i++)
 		{
 			draw_line(
@@ -301,7 +304,7 @@ namespace display
 		double x_end_slope{ triangle.get_inverse_slope(2, 1) };
 		double x_start{ static_cast<double>(triangle.m_points[2].m_x) };
 		double x_end{ static_cast<double>(triangle.m_points[2].m_x) };
-		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
+		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_per_vtx_lt_intensity[0])};
 		for (int i{ triangle.m_points[2].m_y }; i >= triangle.m_points[0].m_y; i--)
 		{
 			draw_line(

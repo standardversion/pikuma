@@ -40,14 +40,9 @@ void update(
 	previous_frame_time = sdl.SDL_GetTicks();
 
 	triangles_to_render = {};
-	int counter{ 0 };
+
 	for (auto& mesh_to_render : meshes)
 	{
-		if (counter) {
-			mesh_to_render.m_scale.m_x = 1.2;
-			mesh_to_render.m_scale.m_y = 1.2;
-			mesh_to_render.m_scale.m_z = 1.2;
-		}
 		mesh_to_render.m_rotation.m_x += 0.01;
 		mesh_to_render.m_rotation.m_y += 0.01;
 		mesh_to_render.m_rotation.m_z += 0.01;
@@ -106,15 +101,15 @@ void update(
 					continue;
 				}
 			}
-			// calculate light intensity at the face			
-			double light_intensity{ abs(per_vertex_normals[0].dot_product(light.m_direction))};
-			projected_triangle.m_light_intensity = light_intensity;
 
-			// project the point
+			// calculate the light intensity per vertex and project the point
+			std::size_t counter{ 0 };
 			for (const auto& vertex : transformed_vertices)
 			{
+				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(per_vertex_normals[counter].dot_product(light.m_direction)));
 				vector::Vector2d<double> projected_point{ display.project_vec4d(display_mode, projection_matrix, vertex) };
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
+				counter++;
 			}
 			if (render_face_center || render_normals)
 			{
@@ -138,38 +133,8 @@ void update(
 					projected_triangle.m_face_normal.m_y = projected_face_normal_point.m_y;
 				}
 			}
-			// the wrong way to do this!
-			// to draw face normal we scale the mesh up
-			// find the center of the scaled triangle
-			// and then draw a line between the non scaled center
-			// and the scaled center
-			//std::vector<vector::Vector4d> transformed_vertices_scaled{ };
-			//for (const auto& vertex : face_vertices)
-			//{
-			//	vector::Vector4d point{ vertex };
-			//	matrix::Matrix4x4 world_matrix{};
-			//	// order matters scale, then rotate and then translate
-			//	world_matrix *= scale_face_center_matrix;
-			//	world_matrix *= rotatation_matrix_z;
-			//	world_matrix *= rotatation_matrix_y;
-			//	world_matrix *= rotatation_matrix_x;
-			//	world_matrix *= translation_matrix;
-			//	point = world_matrix.mult_vec4d(point);
-			//	transformed_vertices_scaled.push_back(point);
-			//}
-			//vector::Vector3d face_center_scaled{ mesh_to_render.get_face_center(transformed_vertices_scaled) };
-			//vector::Vector4d projected_center_scaled{ projection_matrix.project(face_center_scaled) };
-			//vector::Vector2d<double> projected_center_scaled_point{ projected_center_scaled.m_x, projected_center_scaled.m_y };
-			//projected_center_scaled_point.m_x *= display_mode->w / 2;
-			//projected_center_scaled_point.m_y *= display_mode->h / 2;
-			//projected_center_scaled_point.m_x += display_mode->w / 2;
-			//projected_center_scaled_point.m_y += display_mode->h / 2;
-			/*projected_triangle.m_face_normal.m_x = projected_center_scaled_point.m_x;
-			projected_triangle.m_face_normal.m_y = projected_center_scaled_point.m_y;*/
-
 			triangles_to_render.push_back(projected_triangle);
 		}
-		counter++;
 	}
 
 
