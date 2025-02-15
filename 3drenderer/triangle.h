@@ -20,7 +20,8 @@ namespace geo
 		Triangle<T>(vector::Vector2d<T>& a, vector::Vector2d<T>& b, vector::Vector2d<T>& c);
 		void sort_vertices_by_y();
 		vector::Vector2d<T> get_midpoint() const;
-		double get_light_intensity_at_mp() const;
+		/*double get_light_intensity_at_point(vector::Vector2d<T>& point, const double total_area) const;*/
+		double get_area() const;
 		double get_inverse_slope(std::size_t lower_pt_index, std::size_t higher_pt_index) const;
 
 		std::vector<vector::Vector2d<T>> m_points;
@@ -90,6 +91,27 @@ namespace geo
 		}
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	//
+	//        (x0,y0)
+	//          / \
+	//         /   \
+	//        /     \
+	//       /       \
+	//      /         \
+	//  (x1,y1)------(x2,y2)
+	// arear  = 1/2 |x0(y1 - y2) + x1(y2-y0) + x3(y0 - y1)|
+	///////////////////////////////////////////////////////////////////////////////
+	template <typename T>
+	double Triangle<T>::get_area() const
+	{
+		return abs(
+			m_points[0].m_x * (m_points[1].m_y - m_points[2].m_y) +
+			m_points[1].m_x * (m_points[2].m_y - m_points[0].m_y) +
+			m_points[2].m_x * (m_points[0].m_y - m_points[1].m_y)
+		) / 2.0;
+	}
+
 	template <typename T>
 	vector::Vector2d<T> Triangle<T>::get_midpoint() const
 	{
@@ -99,32 +121,42 @@ namespace geo
 
 	///////////////////////////////////////////////////////////////////////////////
 	//
-	//          (x0,y0)
-	//            / \
-	//           /   \
-	//          /     \
-	//         /       \
-	//        /         \
-	//   (x1,y1)------(Mx,My)
-	//       \_           \
-	//          \_         \
-	//             \_       \
-	//                \_     \
-	//                   \    \
-	//                     \_  \
-	//                        \_\
-	//                           \
-	//                         (x2,y2)
-	//
+	//             A
+	//            /|\
+	//           / | \
+	//          /  |  \
+	//         /   |   \
+	//        /    |    \
+	//       B-----P     \
+	//       \_     \_    \
+	//          \_    \_   \
+	//             \_   \_  \
+	//                \_  \_ \
+	//                   \  \ \
+	//                     \_\ \
+	//                        \_C 
 	///////////////////////////////////////////////////////////////////////////////
-	template <typename T>
-	double Triangle<T>::get_light_intensity_at_mp() const
+	/*template <typename T>
+	double Triangle<T>::get_light_intensity_at_point(vector::Vector2d<T>& point, const double total_area) const
 	{
-		T delta_y{ m_points[2].m_y - m_points[0].m_y };
-		double delta_lt_intensity_y{ m_per_vtx_lt_intensity[2] - m_per_vtx_lt_intensity[0] };
-		double delta_lt_intensity_per_y{ delta_lt_intensity_y / static_cast<double>(delta_y) };
-		return static_cast<double>(delta_lt_intensity_per_y * (delta_y / 2.0));
-	}
+		const Triangle<T> abp{};
+		abp.m_points[0] = m_points[0];
+		abp.m_points[1] = m_points[1];
+		abp.m_points[2] = point;
+		const double alpha{ abp.get_area() / total_area };
+		const Triangle<T> bpc{};
+		bpc.m_points[0] = m_points[1];
+		bpc.m_points[1] = point;
+		bpc.m_points[2] = m_points[2];
+		const double beta{ bpc.get_area() / total_area };
+		const Triangle<T> apc{};
+		apc.m_points[0] = m_points[0];
+		apc.m_points[1] = point;
+		apc.m_points[2] = m_points[2];
+		const double gamma{ apc.get_area() / total_area };
+
+		return (alpha * m_per_vtx_lt_intensity[0]) + (beta + m_per_vtx_lt_intensity[1]) + (gamma + m_per_vtx_lt_intensity[2]);
+	}*/
 
 	template <typename T>
 	double Triangle<T>::get_inverse_slope(std::size_t lower_pt_index, std::size_t higher_pt_index) const

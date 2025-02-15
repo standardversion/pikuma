@@ -237,13 +237,14 @@ namespace display
 		}
 		else {
 			vector::Vector2d<int> midpoint{ triangle.get_midpoint() };
-			double mp_lt_intesity{ triangle.get_light_intensity_at_mp() };
+			/*const double total_area{ triangle.get_area() };
+			double mp_lt_intesity{ triangle.get_light_intensity_at_point(midpoint, total_area) };*/
 			geo::Triangle<int> flat_bottom_triangle{ triangle.m_points[0], triangle.m_points[1], midpoint };
 			flat_bottom_triangle.m_per_vtx_lt_intensity = triangle.m_per_vtx_lt_intensity;
-			flat_bottom_triangle.m_per_vtx_lt_intensity[2] = mp_lt_intesity;
+			/*flat_bottom_triangle.m_per_vtx_lt_intensity[2] = mp_lt_intesity;*/
 			geo::Triangle<int> flat_top_triangle{ triangle.m_points[1], midpoint, triangle.m_points[2] };
 			flat_top_triangle.m_per_vtx_lt_intensity = triangle.m_per_vtx_lt_intensity;
-			flat_top_triangle.m_per_vtx_lt_intensity[1] = mp_lt_intesity;
+			/*flat_top_triangle.m_per_vtx_lt_intensity[1] = mp_lt_intesity;*/
 			fill_flat_bottom_triangle(colour_buffer, display_mode, flat_bottom_triangle, colour);
 			fill_flat_top_triangle(colour_buffer, display_mode, flat_top_triangle, colour);
 		}
