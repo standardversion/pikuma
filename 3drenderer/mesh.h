@@ -17,6 +17,7 @@ namespace geo
 		std::vector<vector::Vector3d> get_per_vertex_normals(const std::vector<vector::Vector4d>& face_vertices) const;
 
 		std::vector<vector::Vector3d> m_vertices{};
+		std::vector<vector::Vector3d> m_normals{};
 		std::vector<geo::face_t> m_faces{};
 		vector::Vector3d m_rotation{ 0.0, 0.0, 0.0 };
 		vector::Vector3d m_scale{ 1.0, 1.0, 1.0 };

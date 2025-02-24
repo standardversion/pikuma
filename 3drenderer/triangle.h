@@ -9,6 +9,9 @@ namespace geo
 		int a;
 		int b;
 		int c;
+		int a_normal;
+		int b_normal;
+		int c_normal;
 	};
 
 	template <typename T>

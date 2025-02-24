@@ -40,20 +40,14 @@ void update(
 	previous_frame_time = sdl.SDL_GetTicks();
 
 	triangles_to_render = {};
-	int counter{ 0 };
 	for (auto& mesh_to_render : meshes)
 	{
-		if (counter) {
-			mesh_to_render.m_scale.m_x = 1.2;
-			mesh_to_render.m_scale.m_y = 1.2;
-			mesh_to_render.m_scale.m_z = 1.2;
-		}
-		mesh_to_render.m_rotation.m_x += 0.01;
-		mesh_to_render.m_rotation.m_y += 0.01;
-		mesh_to_render.m_rotation.m_z += 0.01;
-		/*mesh_to_render.m_scale.m_x += 0.01;
-		mesh_to_render.m_scale.m_y += 0.01;
-		mesh_to_render.m_scale.m_z += 0.01;*/
+		//mesh_to_render.m_rotation.m_x += 0.01;
+		//mesh_to_render.m_rotation.m_y += 0.01;
+		//mesh_to_render.m_rotation.m_z += 0.01;
+		//mesh_to_render.m_scale.m_x = 0.5;
+		//mesh_to_render.m_scale.m_y = 0.5;
+		//mesh_to_render.m_scale.m_z = 0.5;
 		//mesh_to_render.m_translation.m_x += 0.01;
 		// move pionts away from camera
 		mesh_to_render.m_translation.m_z = 5.0;
@@ -74,6 +68,12 @@ void update(
 				mesh_to_render.m_vertices[face.a - 1],
 				mesh_to_render.m_vertices[face.b - 1],
 				mesh_to_render.m_vertices[face.c - 1]
+			};
+
+			std::vector<vector::Vector3d> face_vtx_normals{
+				mesh_to_render.m_normals[face.a_normal - 1],
+				mesh_to_render.m_normals[face.b_normal - 1],
+				mesh_to_render.m_normals[face.c_normal - 1]
 			};
 			//loop through each vertex and project the points of those faces
 			// convert the triangle points to ints as we'll project to screen space so we're dealing with x & y pixels which are in ints
@@ -111,10 +111,13 @@ void update(
 			projected_triangle.m_light_intensity = light_intensity;
 
 			// project the point
+			std::size_t index{ 0 };
 			for (const auto& vertex : transformed_vertices)
 			{
 				vector::Vector2d<double> projected_point{ display.project_vec4d(display_mode, projection_matrix, vertex) };
+				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(face_vtx_normals[index].dot_product(light.m_direction)));
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
+				index++;
 			}
 			if (render_face_center || render_normals)
 			{
@@ -169,7 +172,6 @@ void update(
 
 			triangles_to_render.push_back(projected_triangle);
 		}
-		counter++;
 	}
 
 
@@ -293,21 +295,21 @@ int main(int argc, char* argv[])
 	constexpr const std::uint32_t bg_colour{ 0x00000000 };
 	constexpr const std::uint32_t edge_colour{ 0xFFFFFFFF };
 	constexpr const std::uint32_t vertex_colour{ 0xFFFFFF00 };
-	constexpr const std::uint32_t fill_colour{ 0xFF0000FF };
+	constexpr const std::uint32_t fill_colour{ 0x00808080 };
 	const shading::Light directional_light{};
 
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\sphere.obj" };
+	geo::Mesh mesh{ ".\\assets\\teapot.obj" };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
-	int render_mode{ display::RenderModes::wireframe };
+	int render_mode{ display::RenderModes::shaded };
 	bool render_face_center{ false };
 	bool render_normals{ false };
-	bool backface_culling{ true };
+	bool backface_culling{ false };
 	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
 	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
 	const double znear{ 0.1 };

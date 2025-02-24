@@ -148,6 +148,39 @@ namespace display
 		}
 	}
 
+	void Display::draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const std::uint32_t colour) const
+	{
+		int delta_x{ x1 - x0 };
+		int delta_y{ y1 - y0 };
+
+		int side_length = abs(delta_x) >= abs(delta_y) ? abs(delta_x) : abs(delta_y);
+		// Find out how much we should increment in x and y in each iteration
+		double x_increment = delta_x / static_cast<double>(side_length);
+		double y_increment = delta_y / static_cast<double>(side_length);
+
+		double current_x{ static_cast<double>(x0) };
+		double current_y{ static_cast<double>(y0) };
+		double scalar_factor{ 0 };
+		double light_intensity{ start_i };
+		for (int i{ 0 }; i <= side_length; i++)
+		{
+			if (i == side_length) {
+				light_intensity = end_i;
+			} else if (i == 0) { 
+				light_intensity = start_i;
+			}
+			else {
+				light_intensity = start_i + (end_i - start_i) * scalar_factor;
+			}
+
+			std::uint32_t pixel_colour{ apply_light_intensity(colour, light_intensity) };
+			draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), pixel_colour);
+			current_x += x_increment;
+			current_y += y_increment;
+			scalar_factor = vector::Vector2d<int>::get_scalar_factor({ x0, y0 }, { static_cast<int>(current_x), static_cast<int>(current_y) }, { x1, y1 });
+		}
+	}
+
 	void Display::draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour) const
 	{
 		if (x >= 0 && x < display_mode->w && y>= 0 &&  y < display_mode->h)
@@ -237,10 +270,18 @@ namespace display
 		}
 		else {
 			vector::Vector2d<int> midpoint{ triangle.get_midpoint() };
+			double scalar_factor{ vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], midpoint, triangle.m_points[2]) };
+			double mp_intensity{ triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor };
 			geo::Triangle<int> flat_bottom_triangle{ triangle.m_points[0], triangle.m_points[1], midpoint };
 			flat_bottom_triangle.m_light_intensity = triangle.m_light_intensity;
+			flat_bottom_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[0]);
+			flat_bottom_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[1]);
+			flat_bottom_triangle.m_per_vtx_lt_intensity.push_back(mp_intensity);
 			geo::Triangle<int> flat_top_triangle{ triangle.m_points[1], midpoint, triangle.m_points[2] };
 			flat_top_triangle.m_light_intensity = triangle.m_light_intensity;
+			flat_top_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[1]);
+			flat_top_triangle.m_per_vtx_lt_intensity.push_back(mp_intensity);
+			flat_top_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[2]);
 			fill_flat_bottom_triangle(colour_buffer, display_mode, flat_bottom_triangle, colour);
 			fill_flat_top_triangle(colour_buffer, display_mode, flat_top_triangle, colour);
 		}
@@ -250,13 +291,13 @@ namespace display
 	// Draw a filled a triangle with a flat bottom
 	///////////////////////////////////////////////////////////////////////////////
 	//
-	//        (x0,y0)
+	//        (x0,y0) a
 	//          / \
 	//         /   \
 	//        /     \
 	//       /       \
 	//      /         \
-	//  (x1,y1)------(x2,y2)
+	// b (x1,y1)------(x2,y2) c
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	void Display::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
@@ -265,6 +306,10 @@ namespace display
 		double x_end_slope{ triangle.get_inverse_slope(2, 0) };
 		double x_start{ static_cast<double>(triangle.m_points[0].m_x) };
 		double x_end{ static_cast<double>(triangle.m_points[0].m_x) };
+		double start_intensity{ triangle.m_per_vtx_lt_intensity[0] };
+		double end_intensity{ triangle.m_per_vtx_lt_intensity[0] };
+		double scalar_factor_ab{ 0 };
+		double scalar_factor_ac{ 0 };
 		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
 		for (int i{ triangle.m_points[0].m_y }; i <= triangle.m_points[1].m_y; i++)
 		{
@@ -275,10 +320,25 @@ namespace display
 				i,
 				x_end,
 				i,
-				light_colour
+				start_intensity,
+				end_intensity,
+				colour
 			);
+			/*draw_line(
+				colour_buffer,
+				display_mode,
+				x_start,
+				i,
+				x_end,
+				i,
+				light_colour
+			);*/
 			x_start += x_start_slope;
 			x_end += x_end_slope;
+			scalar_factor_ab = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[1]);
+			start_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[1] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ab;
+			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_end), static_cast<int>(i) }, triangle.m_points[2]);
+			end_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ab;
 		}
 	}
 
@@ -286,13 +346,13 @@ namespace display
 	// Draw a filled a triangle with a flat top
 	///////////////////////////////////////////////////////////////////////////////
 	//
-	//  (x0,y0)------(x1,y1)
+	// a (x0,y0)------(x1,y1) b
 	//      \         /
 	//       \       /
 	//        \     /
 	//         \   /
 	//          \ /
-	//        (x2,y2)
+	//        (x2,y2) c
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	void Display::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
@@ -301,6 +361,10 @@ namespace display
 		double x_end_slope{ triangle.get_inverse_slope(2, 1) };
 		double x_start{ static_cast<double>(triangle.m_points[2].m_x) };
 		double x_end{ static_cast<double>(triangle.m_points[2].m_x) };
+		double start_intensity{ triangle.m_per_vtx_lt_intensity[2] };
+		double end_intensity{ triangle.m_per_vtx_lt_intensity[2] };
+		double scalar_factor_ac{ 0 };
+		double scalar_factor_bc{ 0 };
 		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
 		for (int i{ triangle.m_points[2].m_y }; i >= triangle.m_points[0].m_y; i--)
 		{
@@ -311,10 +375,25 @@ namespace display
 				i,
 				x_end,
 				i,
-				light_colour
+				start_intensity,
+				end_intensity,
+				colour
 			);
+			/*draw_line(
+				colour_buffer,
+				display_mode,
+				x_start,
+				i,
+				x_end,
+				i,
+				light_colour
+			);*/
 			x_start -= x_start_slope;
 			x_end -= x_end_slope;
+			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[2]);
+			start_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ac;
+			scalar_factor_bc = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[1], { static_cast<int>(x_end), static_cast<int>(i) }, triangle.m_points[2]);
+			end_intensity = triangle.m_per_vtx_lt_intensity[1] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[1]) * scalar_factor_bc;
 		}
 	}
 
