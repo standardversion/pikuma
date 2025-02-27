@@ -33,7 +33,7 @@ namespace display
 	public:
 		virtual ~Display() = default;
 		virtual void activate_render_mode(const int render_mode, bool& render_wireframe, bool& render_vertex, bool& render_shaded, bool& render_face_center, bool& render_normals) const;
-		virtual std::uint32_t apply_light_intensity(const std::uint32_t color, const double percentage_factor) const;
+		virtual std::uint32_t apply_light_intensity(const std::uint32_t color, double percentage_factor) const;
 		virtual void cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, const SDLWrapper& sdl) const;
 		virtual void clear_colour_buffer(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const;
 		virtual void draw_grid(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on) const;
@@ -42,9 +42,9 @@ namespace display
 		virtual void draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour) const;
 		virtual void draw_rect(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, const std::uint32_t colour) const;
 		virtual void draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const;
-		virtual void fill_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, geo::Triangle<int>& triangle, const std::uint32_t colour) const;
-		virtual void fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const;
-		virtual void fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const;
+		virtual void fill_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, geo::Triangle<int>& triangle, const std::uint32_t colour) const;
+		virtual void fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const geo::Triangle<int>& triangle, const std::uint32_t colour) const;
+		virtual void fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const geo::Triangle<int>& triangle, const std::uint32_t colour) const;
 		virtual bool initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, const SDLWrapper& sdl) const;
 		virtual vector::Vector2d<double> project_vec4d(const SDL_DisplayMode* display_mode, const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d) const;
 		virtual void render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer, const SDLWrapper& sdl) const;

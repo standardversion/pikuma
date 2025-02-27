@@ -26,7 +26,8 @@ namespace geo
 		}
 		else {
 			std::ifstream file(filepath);
-
+			std::vector<std::vector<double>> added_normal_indices;
+			std::vector<std::vector<vector::Vector3d>> vertex_normals;
 			std::string line{};
 			while (std::getline(file, line))
 			{
@@ -36,6 +37,9 @@ namespace geo
 					{
 						// vertex line in obj: v 1.000000 1.000000 -1.000000
 						m_vertices.emplace_back(std::stod(parts[1]), std::stod(parts[2]), std::stod(parts[3]));
+						// create an empty array for each vertex to store it's normals so we can index it when we add the vtx normals
+						vertex_normals.emplace_back(std::vector<vector::Vector3d>{});
+						added_normal_indices.push_back(std::vector<double>{});
 					}
 					if (parts[0] == "vn")
 					{
@@ -58,6 +62,44 @@ namespace geo
 						);
 					}
 				}
+			}
+			std::size_t counter{ 0 };
+			for (const auto& face : m_faces)
+			{
+				int vtx_a_index{ face.a - 1 };
+				int vtx_a_normal_index{ face.a_normal - 1 };
+				if (std::find(added_normal_indices[vtx_a_index].begin(), added_normal_indices[vtx_a_index].end(), vtx_a_normal_index) == added_normal_indices[vtx_a_index].end())
+				{
+					vertex_normals[vtx_a_index].push_back(m_normals[vtx_a_normal_index]);
+					added_normal_indices[vtx_a_index].push_back(vtx_a_normal_index);
+				}
+				int vtx_b_index{ face.b - 1 };
+				int vtx_b_normal_index{ face.b_normal - 1 };
+				if (std::find(added_normal_indices[vtx_b_index].begin(), added_normal_indices[vtx_b_index].end(), vtx_b_normal_index) == added_normal_indices[vtx_b_index].end())
+				{
+					vertex_normals[vtx_b_index].push_back(m_normals[vtx_b_normal_index]);
+					added_normal_indices[vtx_b_index].push_back(vtx_b_normal_index);
+				}
+				int vtx_c_index{ face.c - 1 };
+				int vtx_c_normal_index{ face.c_normal - 1 };
+				if (std::find(added_normal_indices[vtx_c_index].begin(), added_normal_indices[vtx_c_index].end(), vtx_c_normal_index) == added_normal_indices[vtx_c_index].end())
+				{
+					vertex_normals[vtx_c_index].push_back(m_normals[vtx_c_normal_index]);
+					added_normal_indices[vtx_c_index].push_back(vtx_c_normal_index);
+				}				
+				counter++;
+			}
+			for (const std::vector<vector::Vector3d>& vtx_normals : vertex_normals)
+			{
+				vector::Vector3d normal_avg{ 0.0, 0.0, 0.0 };
+				for (std::size_t i{ 0 }; i < vtx_normals.size(); ++i)
+				{
+					normal_avg += vtx_normals[i];
+				}
+				//double sz{ static_cast<double>(vtx_normals.size()) };
+				normal_avg /= vtx_normals.size();
+				normal_avg.normalize();
+				m_vertex_normals.push_back(normal_avg);
 			}
 		}
 	}

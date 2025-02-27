@@ -18,6 +18,7 @@ namespace geo
 
 		std::vector<vector::Vector3d> m_vertices{};
 		std::vector<vector::Vector3d> m_normals{};
+		std::vector<vector::Vector3d> m_vertex_normals{};
 		std::vector<geo::face_t> m_faces{};
 		vector::Vector3d m_rotation{ 0.0, 0.0, 0.0 };
 		vector::Vector3d m_scale{ 1.0, 1.0, 1.0 };

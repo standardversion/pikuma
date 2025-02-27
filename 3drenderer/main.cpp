@@ -43,7 +43,7 @@ void update(
 	for (auto& mesh_to_render : meshes)
 	{
 		//mesh_to_render.m_rotation.m_x += 0.01;
-		//mesh_to_render.m_rotation.m_y += 0.01;
+		mesh_to_render.m_rotation.m_y += 0.01;
 		//mesh_to_render.m_rotation.m_z += 0.01;
 		//mesh_to_render.m_scale.m_x = 0.5;
 		//mesh_to_render.m_scale.m_y = 0.5;
@@ -71,18 +71,25 @@ void update(
 			};
 
 			std::vector<vector::Vector3d> face_vtx_normals{
-				mesh_to_render.m_normals[face.a_normal - 1],
+				/*mesh_to_render.m_normals[face.a_normal - 1],
 				mesh_to_render.m_normals[face.b_normal - 1],
-				mesh_to_render.m_normals[face.c_normal - 1]
+				mesh_to_render.m_normals[face.c_normal - 1],*/
+				mesh_to_render.m_vertex_normals[face.a - 1],
+				mesh_to_render.m_vertex_normals[face.b - 1],
+				mesh_to_render.m_vertex_normals[face.c - 1]
+
 			};
 			//loop through each vertex and project the points of those faces
 			// convert the triangle points to ints as we'll project to screen space so we're dealing with x & y pixels which are in ints
 			geo::Triangle<int> projected_triangle{ };
 			std::vector<vector::Vector4d> transformed_vertices{};
+			std::vector<vector::Vector3d> transformed_normals{};
 			// apply transformations
+			std::size_t ni{ 0 };
 			for (const auto& vertex : face_vertices)
 			{
 				vector::Vector4d point{ vertex };
+				vector::Vector4d normal{ face_vtx_normals[ni] };
 				matrix::Matrix4x4 world_matrix{};
 				// order matters scale, then rotate and then translate
 				world_matrix *= scale_matrix;
@@ -92,6 +99,20 @@ void update(
 				world_matrix *= translation_matrix;
 				point = world_matrix.mult_vec4d(point);
 				transformed_vertices.push_back(point);
+				
+				matrix::Matrix3x3 world_matrix_for_normals{};
+				//// order matters scale, then rotate
+				world_matrix_for_normals *= scale_matrix;
+				world_matrix_for_normals *= rotatation_matrix_z;
+				world_matrix_for_normals *= rotatation_matrix_y;
+				world_matrix_for_normals *= rotatation_matrix_x;
+				vector::Vector3d transformed_normal{ face_vtx_normals[ni] };
+				transformed_normal = world_matrix_for_normals.get_inverse().get_transpose().mult_vec3d(transformed_normal);
+				transformed_normals.emplace_back(transformed_normal);
+				//vector::Vector4d transformed_normal{ face_vtx_normals[index] };
+				//transformed_normal = world_matrix.get_transpose().mult_vec4d(transformed_normal);
+				transformed_normal.normalize();
+				ni++;
 			}
 			// get avg depth of each face so we can sort and render by depth
 			projected_triangle.m_avg_depth = (transformed_vertices[0].m_z + transformed_vertices[1].m_z + transformed_vertices[2].m_z) / 3.0;
@@ -115,7 +136,7 @@ void update(
 			for (const auto& vertex : transformed_vertices)
 			{
 				vector::Vector2d<double> projected_point{ display.project_vec4d(display_mode, projection_matrix, vertex) };
-				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(face_vtx_normals[index].dot_product(light.m_direction)));
+				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(transformed_normals[index].dot_product(light.m_direction)));
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
 				index++;
 			}
@@ -198,6 +219,8 @@ void render(
 	const int render_mode,
 	bool& render_face_center,
 	bool& render_normals,
+	bool render_flat_shaded,
+	bool render_gourand_shaded,
 	const SDLWrapper& sdl
 )
 {
@@ -214,6 +237,8 @@ void render(
 			display.fill_triangle(
 				colour_buffer,
 				display_mode,
+				render_flat_shaded,
+				render_gourand_shaded,
 				triangle,
 				fill_colour
 			);
@@ -302,14 +327,16 @@ int main(int argc, char* argv[])
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\teapot.obj" };
+	geo::Mesh mesh{ ".\\assets\\sphere.obj" };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
 	int render_mode{ display::RenderModes::shaded };
 	bool render_face_center{ false };
 	bool render_normals{ false };
-	bool backface_culling{ false };
+	bool backface_culling{ true };
+	bool render_flat_shaded{ true };
+	bool render_gourand_shaded{ false };
 	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
 	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
 	const double znear{ 0.1 };
@@ -317,7 +344,7 @@ int main(int argc, char* argv[])
 	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
-		input.process(is_running, render_mode, backface_culling, event, sdl);
+		input.process(is_running, render_mode, backface_culling, render_flat_shaded, render_gourand_shaded, event, sdl);
 		update(
 			meshes,
 			projection_matrix,
@@ -346,6 +373,8 @@ int main(int argc, char* argv[])
 			render_mode,
 			render_face_center,
 			render_normals,
+			render_flat_shaded,
+			render_gourand_shaded,
 			sdl
 		);
 	}

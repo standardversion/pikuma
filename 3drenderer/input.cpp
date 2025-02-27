@@ -2,7 +2,7 @@
 
 namespace input
 {
-	void Input::process(bool& is_running, int& render_mode, bool& backface_culling, SDL_Event& event, const SDLWrapper& sdl) const
+	void Input::process(bool& is_running, int& render_mode, bool& backface_culling, bool& render_flat_shaded, bool& render_gourand_shaded, SDL_Event& event, const SDLWrapper& sdl) const
 	{
 		
 		sdl.SDL_PollEvent(&event);
@@ -36,6 +36,16 @@ namespace input
 				backface_culling = true;
 			else if (event.key.keysym.sym == SDLK_b)
 				backface_culling = false;
+			else if (event.key.keysym.sym == SDLK_g)
+			{
+				render_gourand_shaded = true;
+				render_flat_shaded = false;
+			}
+			else if (event.key.keysym.sym == SDLK_f)
+			{
+				render_gourand_shaded = false;
+				render_flat_shaded = true;
+			}
 			break;
 		}
 	}

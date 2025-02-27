@@ -53,26 +53,41 @@ namespace geo
 		vector::Vector2d<T> point0{ m_points[0] };
 		vector::Vector2d<T> point1{ m_points[1] };
 		vector::Vector2d<T> point2{ m_points[2] };
+		double intensity_p0{ m_per_vtx_lt_intensity[0] };
+		double intensity_p1{ m_per_vtx_lt_intensity[1] };
+		double intensity_p2{ m_per_vtx_lt_intensity[2] };
 		if (point1.m_y < point0.m_y)
 		{
 			m_points[0] = point1;
 			m_points[1] = point0;
+			m_per_vtx_lt_intensity[0] = intensity_p1;
+			m_per_vtx_lt_intensity[1] = intensity_p0;
 			point0 = m_points[0];
 			point1 = m_points[1];
 			point2 = m_points[2];
+			intensity_p0 = m_per_vtx_lt_intensity[0];
+			intensity_p1 = m_per_vtx_lt_intensity[1];
+			intensity_p2 = m_per_vtx_lt_intensity[2];
 		}
 		if (point2.m_y < point0.m_y)
 		{
 			m_points[0] = point2;
 			m_points[2] = point0;
+			m_per_vtx_lt_intensity[0] = intensity_p2;
+			m_per_vtx_lt_intensity[2] = intensity_p0;
 			point0 = m_points[0];
 			point1 = m_points[1];
 			point2 = m_points[2];
+			intensity_p0 = m_per_vtx_lt_intensity[0];
+			intensity_p1 = m_per_vtx_lt_intensity[1];
+			intensity_p2 = m_per_vtx_lt_intensity[2];
 		}
 		if (point2.m_y < point1.m_y)
 		{
 			m_points[1] = point2;
 			m_points[2] = point1;
+			m_per_vtx_lt_intensity[1] = intensity_p2;
+			m_per_vtx_lt_intensity[2] = intensity_p1;
 		}
 	}
 

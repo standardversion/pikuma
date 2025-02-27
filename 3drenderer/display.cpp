@@ -75,8 +75,10 @@ namespace display
 		}
 	}
 
-	std::uint32_t Display::apply_light_intensity(const std::uint32_t colour, const double percentage_factor) const
+	std::uint32_t Display::apply_light_intensity(const std::uint32_t colour, double percentage_factor) const
 	{
+		if (percentage_factor < 0) percentage_factor = 0;
+		if (percentage_factor > 1) percentage_factor = 1;
 		const std::uint32_t a = (colour & 0xFF000000);
 		const std::uint32_t r = (colour & 0x00FF0000) * percentage_factor;
 		const std::uint32_t g = (colour & 0x0000FF00) * percentage_factor;
@@ -255,18 +257,18 @@ namespace display
 	//                         (x2,y2)
 	//
 	///////////////////////////////////////////////////////////////////////////////
-	void Display::fill_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	void Display::fill_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
 		triangle.sort_vertices_by_y();
 
 		if (triangle.m_points[1].m_y == triangle.m_points[2].m_y)
 		{
-			fill_flat_bottom_triangle(colour_buffer, display_mode, triangle, colour);
+			fill_flat_bottom_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, triangle, colour);
 		}
 		else if (triangle.m_points[0].m_y == triangle.m_points[1].m_y)
 		{
-			fill_flat_top_triangle(colour_buffer, display_mode, triangle, colour);
+			fill_flat_top_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, triangle, colour);
 		}
 		else {
 			vector::Vector2d<int> midpoint{ triangle.get_midpoint() };
@@ -282,8 +284,8 @@ namespace display
 			flat_top_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[1]);
 			flat_top_triangle.m_per_vtx_lt_intensity.push_back(mp_intensity);
 			flat_top_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[2]);
-			fill_flat_bottom_triangle(colour_buffer, display_mode, flat_bottom_triangle, colour);
-			fill_flat_top_triangle(colour_buffer, display_mode, flat_top_triangle, colour);
+			fill_flat_bottom_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, flat_bottom_triangle, colour);
+			fill_flat_top_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, flat_top_triangle, colour);
 		}
 	}
 
@@ -300,7 +302,7 @@ namespace display
 	// b (x1,y1)------(x2,y2) c
 	//
 	///////////////////////////////////////////////////////////////////////////////
-	void Display::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	void Display::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		double x_start_slope{ triangle.get_inverse_slope(1, 0) };
 		double x_end_slope{ triangle.get_inverse_slope(2, 0) };
@@ -313,26 +315,32 @@ namespace display
 		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
 		for (int i{ triangle.m_points[0].m_y }; i <= triangle.m_points[1].m_y; i++)
 		{
-			draw_line(
-				colour_buffer,
-				display_mode,
-				x_start,
-				i,
-				x_end,
-				i,
-				start_intensity,
-				end_intensity,
-				colour
-			);
-			/*draw_line(
-				colour_buffer,
-				display_mode,
-				x_start,
-				i,
-				x_end,
-				i,
-				light_colour
-			);*/
+			if (render_gourand_shaded)
+			{
+				draw_line(
+					colour_buffer,
+					display_mode,
+					x_start,
+					i,
+					x_end,
+					i,
+					start_intensity,
+					end_intensity,
+					colour
+				);
+			}
+			if (render_flat_shaded)
+			{
+				draw_line(
+					colour_buffer,
+					display_mode,
+					x_start,
+					i,
+					x_end,
+					i,
+					light_colour
+				);
+			}
 			x_start += x_start_slope;
 			x_end += x_end_slope;
 			scalar_factor_ab = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[1]);
@@ -355,7 +363,7 @@ namespace display
 	//        (x2,y2) c
 	//
 	///////////////////////////////////////////////////////////////////////////////
-	void Display::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	void Display::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		double x_start_slope{ triangle.get_inverse_slope(2, 0) };
 		double x_end_slope{ triangle.get_inverse_slope(2, 1) };
@@ -368,26 +376,32 @@ namespace display
 		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
 		for (int i{ triangle.m_points[2].m_y }; i >= triangle.m_points[0].m_y; i--)
 		{
-			draw_line(
-				colour_buffer,
-				display_mode,
-				x_start,
-				i,
-				x_end,
-				i,
-				start_intensity,
-				end_intensity,
-				colour
-			);
-			/*draw_line(
-				colour_buffer,
-				display_mode,
-				x_start,
-				i,
-				x_end,
-				i,
-				light_colour
-			);*/
+			if (render_gourand_shaded)
+			{
+				draw_line(
+					colour_buffer,
+					display_mode,
+					x_start,
+					i,
+					x_end,
+					i,
+					start_intensity,
+					end_intensity,
+					colour
+				);
+			}
+			if (render_flat_shaded)
+			{
+				draw_line(
+					colour_buffer,
+					display_mode,
+					x_start,
+					i,
+					x_end,
+					i,
+					light_colour
+				);
+			}
 			x_start -= x_start_slope;
 			x_end -= x_end_slope;
 			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[2]);
