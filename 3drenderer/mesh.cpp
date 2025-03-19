@@ -28,6 +28,7 @@ namespace geo
 			std::ifstream file(filepath);
 			std::vector<std::vector<double>> added_normal_indices;
 			std::vector<std::vector<vector::Vector3d>> vertex_normals;
+			std::vector<vector::Vector3d> obj_normals{};
 			std::string line{};
 			while (std::getline(file, line))
 			{
@@ -44,7 +45,7 @@ namespace geo
 					if (parts[0] == "vn")
 					{
 						// vertex normal line in obj vn -0.0000 1.0000 - 0.0000
-						m_normals.emplace_back(std::stod(parts[1]), std::stod(parts[2]), std::stod(parts[3]));
+						obj_normals.emplace_back(std::stod(parts[1]), std::stod(parts[2]), std::stod(parts[3]));
 					}
 					else if (parts[0] == "f")
 					{
@@ -70,21 +71,21 @@ namespace geo
 				int vtx_a_normal_index{ face.a_normal - 1 };
 				if (std::find(added_normal_indices[vtx_a_index].begin(), added_normal_indices[vtx_a_index].end(), vtx_a_normal_index) == added_normal_indices[vtx_a_index].end())
 				{
-					vertex_normals[vtx_a_index].push_back(m_normals[vtx_a_normal_index]);
+					vertex_normals[vtx_a_index].push_back(obj_normals[vtx_a_normal_index]);
 					added_normal_indices[vtx_a_index].push_back(vtx_a_normal_index);
 				}
 				int vtx_b_index{ face.b - 1 };
 				int vtx_b_normal_index{ face.b_normal - 1 };
 				if (std::find(added_normal_indices[vtx_b_index].begin(), added_normal_indices[vtx_b_index].end(), vtx_b_normal_index) == added_normal_indices[vtx_b_index].end())
 				{
-					vertex_normals[vtx_b_index].push_back(m_normals[vtx_b_normal_index]);
+					vertex_normals[vtx_b_index].push_back(obj_normals[vtx_b_normal_index]);
 					added_normal_indices[vtx_b_index].push_back(vtx_b_normal_index);
 				}
 				int vtx_c_index{ face.c - 1 };
 				int vtx_c_normal_index{ face.c_normal - 1 };
 				if (std::find(added_normal_indices[vtx_c_index].begin(), added_normal_indices[vtx_c_index].end(), vtx_c_normal_index) == added_normal_indices[vtx_c_index].end())
 				{
-					vertex_normals[vtx_c_index].push_back(m_normals[vtx_c_normal_index]);
+					vertex_normals[vtx_c_index].push_back(obj_normals[vtx_c_normal_index]);
 					added_normal_indices[vtx_c_index].push_back(vtx_c_normal_index);
 				}				
 				counter++;

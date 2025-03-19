@@ -1,4 +1,4 @@
-#include "display.h"
+﻿#include "display.h"
 #include "utils.h"
 
 namespace display
@@ -87,11 +87,11 @@ namespace display
 		return std::uint32_t{ a | (r & 0x00FF0000) | (g & 0x0000FF00) | (b & 0x000000FF) };
 	}
 
-	void Display::cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, const SDLWrapper& sdl) const
+	void Display::cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer) const
 	{
-		sdl.SDL_DestroyRenderer(renderer);
-		sdl.SDL_DestroyWindow(window);
-		sdl.SDL_Quit();
+		SDL_DestroyRenderer(renderer);
+		SDL_DestroyWindow(window);
+		SDL_Quit();
 		renderer = nullptr;
 		window = nullptr;
 		// deallocate the memory
@@ -164,6 +164,8 @@ namespace display
 		double current_y{ static_cast<double>(y0) };
 		double scalar_factor{ 0 };
 		double light_intensity{ start_i };
+		// for gourand shading, interpolate the intensity at each pixel based on 
+		// the intensity at the start and the end
 		for (int i{ 0 }; i <= side_length; i++)
 		{
 			if (i == side_length) {
@@ -343,6 +345,12 @@ namespace display
 			}
 			x_start += x_start_slope;
 			x_end += x_end_slope;
+			/*
+			For two values A and B, and a scalar factor λ, the interpolated value I is given by:
+
+							I=A+λ⋅(B−A)
+			Interpolate the intensity at each start and end pixels
+			*/
 			scalar_factor_ab = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[1]);
 			start_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[1] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ab;
 			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_end), static_cast<int>(i) }, triangle.m_points[2]);
@@ -404,6 +412,12 @@ namespace display
 			}
 			x_start -= x_start_slope;
 			x_end -= x_end_slope;
+			/*
+			For two values A and B, and a scalar factor λ, the interpolated value I is given by:
+
+							I=A+λ⋅(B−A)
+			Interpolate the intensity at each start and end pixels
+			*/
 			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[2]);
 			start_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ac;
 			scalar_factor_bc = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[1], { static_cast<int>(x_end), static_cast<int>(i) }, triangle.m_points[2]);
@@ -411,23 +425,23 @@ namespace display
 		}
 	}
 
-	bool Display::initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode, const SDLWrapper& sdl) const
+	bool Display::initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode) const
 	{
 		// Initialize the SDL library
 		// SDL_INIT_EVERYTHING flag initializes audio, video, controller etc subsystems
-		if (sdl.SDL_Init(SDL_INIT_EVERYTHING) != 0)
+		if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 		{
 			std::cout << "Error initializing SLD.\n";
 			return false;
 		}
 		// Get the current display mode so we can figure out current display dimensions
-		if (sdl.SDL_GetCurrentDisplayMode(0, display_mode) != 0)
+		if (SDL_GetCurrentDisplayMode(0, display_mode) != 0)
 		{
 			std::cout << "Error getting SLD Display mode.\n";
 			return false;
 		}
 		// Create the SDL Window
-		window = sdl.SDL_CreateWindow(
+		window = SDL_CreateWindow(
 			NULL,
 			SDL_WINDOWPOS_CENTERED,
 			SDL_WINDOWPOS_CENTERED,
@@ -443,7 +457,7 @@ namespace display
 		// Create SDL Renderer, a 2d rendering context for a window
 		// -1 to initialize the first driver supporting the requested flags.
 		// 0 is no flags requested
-		renderer = sdl.SDL_CreateRenderer(window, -1, 0);
+		renderer = SDL_CreateRenderer(window, -1, 0);
 
 		if (!renderer)
 		{
@@ -451,7 +465,7 @@ namespace display
 			return false;
 		}
 
-		sdl.SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+		SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
 		return true;
 	}
 
@@ -473,26 +487,26 @@ namespace display
 		return projected_point;
 	}
 
-	void Display::render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer, const SDLWrapper& sdl) const
+	void Display::render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer) const
 	{
 		// update the texture with the contents of the colour buffer
-		sdl.SDL_UpdateTexture(
+		SDL_UpdateTexture(
 			colour_buffer_texture,
 			NULL,
 			colour_buffer,
 			static_cast<int>(display_mode->w * sizeof(std::uint32_t))
 		);
 		// copy the texture onto the renderer, null, null copies entire texture
-		sdl.SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
+		SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
 	}
 
-	bool Display::setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode, const SDLWrapper& sdl) const
+	bool Display::setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode) const
 	{
 		// first create the window and rendering context
-		bool initialized = initialize_window(window, renderer, displaymode, sdl);
+		bool initialized = initialize_window(window, renderer, displaymode);
 		if (initialized) {
 			// Create a texture for a rendering context. ie to display the colour buffer
-			colour_buffer_texture = sdl.SDL_CreateTexture(
+			colour_buffer_texture = SDL_CreateTexture(
 				renderer,
 				SDL_PIXELFORMAT_ARGB8888,
 				SDL_TEXTUREACCESS_STREAMING,

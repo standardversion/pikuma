@@ -30,6 +30,10 @@ namespace vector
 	{
 	};
 
+	/*
+	This function computes a scalar factor that relates the distance between two points (a and b) to the distance between two other points (a and c).
+	It uses the Euclidean distance formula to calculate the distances and returns their ratio as a scalar factor.
+	*/
 	template <typename T>
 	double Vector2d<T>::get_scalar_factor(const Vector2d<T>& a, const Vector2d<T>& b, const Vector2d<T>& c)
 	{

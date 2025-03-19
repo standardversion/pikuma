@@ -2,10 +2,10 @@
 
 namespace input
 {
-	void Input::process(bool& is_running, int& render_mode, bool& backface_culling, bool& render_flat_shaded, bool& render_gourand_shaded, SDL_Event& event, const SDLWrapper& sdl) const
+	void Input::process(bool& is_running, int& render_mode, bool& backface_culling, bool& render_flat_shaded, bool& render_gourand_shaded, SDL_Event& event) const
 	{
 		
-		sdl.SDL_PollEvent(&event);
+		SDL_PollEvent(&event);
 		switch (event.type)
 		{
 		case SDL_QUIT:

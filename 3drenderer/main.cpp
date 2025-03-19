@@ -8,7 +8,6 @@
 #include "display.h"
 #include "input.h"
 #include "light.h"
-#include "sdlwrapper.h"
 #include "vector3d.h"
 #include "vector2d.h"
 #include "mesh.h"
@@ -27,24 +26,23 @@ void update(
 	const bool backface_culling,
 	const shading::Light& light,
 	const bool render_face_center,
-	const bool render_normals,
-	const SDLWrapper& sdl
+	const bool render_normals
 )
 {
-	int time_to_wait = display::FRAME_TARGET_TIME - (sdl.SDL_GetTicks() - previous_frame_time);
+	int time_to_wait = display::FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
 	if (time_to_wait > 0 && time_to_wait <= display::FRAME_TARGET_TIME)
 	{
-		sdl.SDL_Delay(time_to_wait);
+		SDL_Delay(time_to_wait);
 	}
 
-	previous_frame_time = sdl.SDL_GetTicks();
+	previous_frame_time = SDL_GetTicks();
 
 	triangles_to_render = {};
 	for (auto& mesh_to_render : meshes)
 	{
-		//mesh_to_render.m_rotation.m_x += 0.01;
+		mesh_to_render.m_rotation.m_x += 0.01;
 		mesh_to_render.m_rotation.m_y += 0.01;
-		//mesh_to_render.m_rotation.m_z += 0.01;
+		mesh_to_render.m_rotation.m_z += 0.01;
 		//mesh_to_render.m_scale.m_x = 0.5;
 		//mesh_to_render.m_scale.m_y = 0.5;
 		//mesh_to_render.m_scale.m_z = 0.5;
@@ -58,7 +56,6 @@ void update(
 		matrix::Matrix4x4 rotatation_matrix_y{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_y, 'y') };
 		matrix::Matrix4x4 rotatation_matrix_z{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_z, 'z') };
 
-		matrix::Matrix4x4 scale_face_center_matrix{ matrix::Matrix4x4::make_scale_matrix(1.1, 1.1, 1.1) };
 
 		for (const auto& face : mesh_to_render.m_faces)
 		{
@@ -71,9 +68,6 @@ void update(
 			};
 
 			std::vector<vector::Vector3d> face_vtx_normals{
-				/*mesh_to_render.m_normals[face.a_normal - 1],
-				mesh_to_render.m_normals[face.b_normal - 1],
-				mesh_to_render.m_normals[face.c_normal - 1],*/
 				mesh_to_render.m_vertex_normals[face.a - 1],
 				mesh_to_render.m_vertex_normals[face.b - 1],
 				mesh_to_render.m_vertex_normals[face.c - 1]
@@ -85,11 +79,10 @@ void update(
 			std::vector<vector::Vector4d> transformed_vertices{};
 			std::vector<vector::Vector3d> transformed_normals{};
 			// apply transformations
-			std::size_t ni{ 0 };
+			std::size_t counter{ 0 };
 			for (const auto& vertex : face_vertices)
 			{
 				vector::Vector4d point{ vertex };
-				vector::Vector4d normal{ face_vtx_normals[ni] };
 				matrix::Matrix4x4 world_matrix{};
 				// order matters scale, then rotate and then translate
 				world_matrix *= scale_matrix;
@@ -106,13 +99,11 @@ void update(
 				world_matrix_for_normals *= rotatation_matrix_z;
 				world_matrix_for_normals *= rotatation_matrix_y;
 				world_matrix_for_normals *= rotatation_matrix_x;
-				vector::Vector3d transformed_normal{ face_vtx_normals[ni] };
+				vector::Vector3d transformed_normal{ face_vtx_normals[counter] };
 				transformed_normal = world_matrix_for_normals.get_inverse().get_transpose().mult_vec3d(transformed_normal);
 				transformed_normals.emplace_back(transformed_normal);
-				//vector::Vector4d transformed_normal{ face_vtx_normals[index] };
-				//transformed_normal = world_matrix.get_transpose().mult_vec4d(transformed_normal);
 				transformed_normal.normalize();
-				ni++;
+				counter++;
 			}
 			// get avg depth of each face so we can sort and render by depth
 			projected_triangle.m_avg_depth = (transformed_vertices[0].m_z + transformed_vertices[1].m_z + transformed_vertices[2].m_z) / 3.0;
@@ -132,13 +123,13 @@ void update(
 			projected_triangle.m_light_intensity = light_intensity;
 
 			// project the point
-			std::size_t index{ 0 };
+			counter = 0;
 			for (const auto& vertex : transformed_vertices)
 			{
 				vector::Vector2d<double> projected_point{ display.project_vec4d(display_mode, projection_matrix, vertex) };
-				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(transformed_normals[index].dot_product(light.m_direction)));
+				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(transformed_normals[counter].dot_product(light.m_direction)));
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
-				index++;
+				counter++;
 			}
 			if (render_face_center || render_normals)
 			{
@@ -162,34 +153,6 @@ void update(
 					projected_triangle.m_face_normal.m_y = projected_face_normal_point.m_y;
 				}
 			}
-			// the wrong way to do this!
-			// to draw face normal we scale the mesh up
-			// find the center of the scaled triangle
-			// and then draw a line between the non scaled center
-			// and the scaled center
-			//std::vector<vector::Vector4d> transformed_vertices_scaled{ };
-			//for (const auto& vertex : face_vertices)
-			//{
-			//	vector::Vector4d point{ vertex };
-			//	matrix::Matrix4x4 world_matrix{};
-			//	// order matters scale, then rotate and then translate
-			//	world_matrix *= scale_face_center_matrix;
-			//	world_matrix *= rotatation_matrix_z;
-			//	world_matrix *= rotatation_matrix_y;
-			//	world_matrix *= rotatation_matrix_x;
-			//	world_matrix *= translation_matrix;
-			//	point = world_matrix.mult_vec4d(point);
-			//	transformed_vertices_scaled.push_back(point);
-			//}
-			//vector::Vector3d face_center_scaled{ mesh_to_render.get_face_center(transformed_vertices_scaled) };
-			//vector::Vector4d projected_center_scaled{ projection_matrix.project(face_center_scaled) };
-			//vector::Vector2d<double> projected_center_scaled_point{ projected_center_scaled.m_x, projected_center_scaled.m_y };
-			//projected_center_scaled_point.m_x *= display_mode->w / 2;
-			//projected_center_scaled_point.m_y *= display_mode->h / 2;
-			//projected_center_scaled_point.m_x += display_mode->w / 2;
-			//projected_center_scaled_point.m_y += display_mode->h / 2;
-			/*projected_triangle.m_face_normal.m_x = projected_center_scaled_point.m_x;
-			projected_triangle.m_face_normal.m_y = projected_center_scaled_point.m_y;*/
 
 			triangles_to_render.push_back(projected_triangle);
 		}
@@ -220,8 +183,7 @@ void render(
 	bool& render_face_center,
 	bool& render_normals,
 	bool render_flat_shaded,
-	bool render_gourand_shaded,
-	const SDLWrapper& sdl
+	bool render_gourand_shaded
 )
 {
 	bool render_wireframe{ false };
@@ -296,12 +258,12 @@ void render(
 	}
 
 	// render the colour buffer
-	display.render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer, sdl);
+	display.render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer);
 	// fill the colour buffer with a colour value
 	display.clear_colour_buffer(colour_buffer, display_mode, bg_colour);
 
 	// Update the screen with any rendering performed since the previous call.
-	sdl.SDL_RenderPresent(renderer);
+	SDL_RenderPresent(renderer);
 
 }
 
@@ -312,10 +274,9 @@ int main(int argc, char* argv[])
 	SDL_Renderer* renderer{ nullptr };
 	SDL_Texture* colour_buffer_texture{ nullptr };
 	SDL_DisplayMode display_mode;
-	const SDLWrapper sdl{};
 	display::Display display{};
 	const input::Input input{};
-	bool is_running{ display.setup(colour_buffer_texture, window, renderer, &display_mode, sdl) };
+	bool is_running{ display.setup(colour_buffer_texture, window, renderer, &display_mode) };
 	std::uint32_t* colour_buffer{ new std::uint32_t[display_mode.w * display_mode.h]{} };
 	constexpr const std::uint32_t bg_colour{ 0x00000000 };
 	constexpr const std::uint32_t edge_colour{ 0xFFFFFFFF };
@@ -327,7 +288,7 @@ int main(int argc, char* argv[])
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\sphere.obj" };
+	geo::Mesh mesh{ ".\\assets\\teapot.obj" };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
@@ -344,7 +305,7 @@ int main(int argc, char* argv[])
 	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
-		input.process(is_running, render_mode, backface_culling, render_flat_shaded, render_gourand_shaded, event, sdl);
+		input.process(is_running, render_mode, backface_culling, render_flat_shaded, render_gourand_shaded, event);
 		update(
 			meshes,
 			projection_matrix,
@@ -356,8 +317,7 @@ int main(int argc, char* argv[])
 			backface_culling,
 			directional_light,
 			render_face_center,
-			render_normals,
-			sdl);
+			render_normals);
 		render(
 			display,
 			renderer,
@@ -374,10 +334,9 @@ int main(int argc, char* argv[])
 			render_face_center,
 			render_normals,
 			render_flat_shaded,
-			render_gourand_shaded,
-			sdl
+			render_gourand_shaded
 		);
 	}
-	display.cleanup(window, renderer, colour_buffer, sdl);
+	display.cleanup(window, renderer, colour_buffer);
 	return 0;
 }
