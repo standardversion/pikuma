@@ -8,6 +8,7 @@ namespace vector
 	{
 	public:
 		Vector2d(const T x, const T y);
+		static double get_scalar_factor(const Vector2d<T>& a, const Vector2d<T>& b, const Vector2d<T>& c);
 		double get_magnitude() const;
 		Vector2d<T>& operator+=(const Vector2d<T>& v);
 		Vector2d<T> operator+(const Vector2d<T>& v) const;
@@ -28,6 +29,19 @@ namespace vector
 		: m_x{ x }, m_y{ y }
 	{
 	};
+
+	/*
+	This function computes a scalar factor that relates the distance between two points (a and b) to the distance between two other points (a and c).
+	It uses the Euclidean distance formula to calculate the distances and returns their ratio as a scalar factor.
+	*/
+	template <typename T>
+	double Vector2d<T>::get_scalar_factor(const Vector2d<T>& a, const Vector2d<T>& b, const Vector2d<T>& c)
+	{
+		double ac{ sqrt((c.m_x - a.m_x) * (c.m_x - a.m_x) + (c.m_y - a.m_y) * (c.m_y - a.m_y)) };
+		double ab{ sqrt((b.m_x - a.m_x) * (b.m_x - a.m_x) + (b.m_y - a.m_y) * (b.m_y - a.m_y)) };
+		return ab / ac;
+
+	}
 
 	template <typename T>
 	double Vector2d<T>::get_magnitude() const

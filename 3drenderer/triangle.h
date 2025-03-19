@@ -9,6 +9,9 @@ namespace geo
 		int a;
 		int b;
 		int c;
+		int a_normal;
+		int b_normal;
+		int c_normal;
 	};
 
 	template <typename T>
@@ -24,6 +27,10 @@ namespace geo
 
 		std::vector<vector::Vector2d<T>> m_points;
 		double m_avg_depth{0.0};
+		double m_light_intensity{ 1.0 };
+		vector::Vector2d<double> m_center{ 0.0, 0.0 };
+		vector::Vector2d<double> m_face_normal{ 0.0, 0.0 };
+		std::vector<double> m_per_vtx_lt_intensity{};
 	};
 
 	template <typename T>
@@ -46,26 +53,41 @@ namespace geo
 		vector::Vector2d<T> point0{ m_points[0] };
 		vector::Vector2d<T> point1{ m_points[1] };
 		vector::Vector2d<T> point2{ m_points[2] };
+		double intensity_p0{ m_per_vtx_lt_intensity[0] };
+		double intensity_p1{ m_per_vtx_lt_intensity[1] };
+		double intensity_p2{ m_per_vtx_lt_intensity[2] };
 		if (point1.m_y < point0.m_y)
 		{
 			m_points[0] = point1;
 			m_points[1] = point0;
+			m_per_vtx_lt_intensity[0] = intensity_p1;
+			m_per_vtx_lt_intensity[1] = intensity_p0;
 			point0 = m_points[0];
 			point1 = m_points[1];
 			point2 = m_points[2];
+			intensity_p0 = m_per_vtx_lt_intensity[0];
+			intensity_p1 = m_per_vtx_lt_intensity[1];
+			intensity_p2 = m_per_vtx_lt_intensity[2];
 		}
 		if (point2.m_y < point0.m_y)
 		{
 			m_points[0] = point2;
 			m_points[2] = point0;
+			m_per_vtx_lt_intensity[0] = intensity_p2;
+			m_per_vtx_lt_intensity[2] = intensity_p0;
 			point0 = m_points[0];
 			point1 = m_points[1];
 			point2 = m_points[2];
+			intensity_p0 = m_per_vtx_lt_intensity[0];
+			intensity_p1 = m_per_vtx_lt_intensity[1];
+			intensity_p2 = m_per_vtx_lt_intensity[2];
 		}
 		if (point2.m_y < point1.m_y)
 		{
 			m_points[1] = point2;
 			m_points[2] = point1;
+			m_per_vtx_lt_intensity[1] = intensity_p2;
+			m_per_vtx_lt_intensity[2] = intensity_p1;
 		}
 	}
 
