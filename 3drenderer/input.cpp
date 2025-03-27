@@ -2,7 +2,15 @@
 
 namespace input
 {
-	void Input::process(bool& is_running, int& render_mode, bool& backface_culling, bool& render_flat_shaded, bool& render_gourand_shaded, SDL_Event& event) const
+	void Input::process(
+		bool& is_running,
+		int& render_mode,
+		bool& backface_culling,
+		bool& render_flat_shaded,
+		bool& render_gourand_shaded,
+		bool& render_texture,
+		SDL_Event& event
+	) const
 	{
 		
 		SDL_PollEvent(&event);
@@ -45,6 +53,10 @@ namespace input
 			{
 				render_gourand_shaded = false;
 				render_flat_shaded = true;
+			}
+			else if (event.key.keysym.sym == SDLK_t)
+			{
+				render_texture = !render_texture;
 			}
 			break;
 		}

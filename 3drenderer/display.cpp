@@ -185,6 +185,57 @@ namespace display
 		}
 	}
 
+	void Display::draw_line(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const vector::Vector2d<double>& start_uv, const vector::Vector2d<double>& end_uv) const
+	{
+		int delta_x{ x1 - x0 };
+		int delta_y{ y1 - y0 };
+
+		int side_length = abs(delta_x) >= abs(delta_y) ? abs(delta_x) : abs(delta_y);
+		// Find out how much we should increment in x and y in each iteration
+		double x_increment = delta_x / static_cast<double>(side_length);
+		double y_increment = delta_y / static_cast<double>(side_length);
+
+		double current_x{ static_cast<double>(x0) };
+		double current_y{ static_cast<double>(y0) };
+		double scalar_factor{ 0 };
+		double light_intensity{ start_i };
+		double u{ start_uv.m_x };
+		double v{ start_uv.m_y };
+		// for gourand shading, interpolate the intensity at each pixel based on 
+		// the intensity at the start and the end
+		for (int i{ 0 }; i <= side_length; i++)
+		{
+			if (i == side_length) {
+				light_intensity = end_i;
+				u = end_uv.m_x;
+				v = end_uv.m_y;
+			}
+			else if (i == 0) {
+				light_intensity = start_i;
+				u = start_uv.m_x;
+				v = start_uv.m_y;
+			}
+			else {
+				light_intensity = start_i + (end_i - start_i) * scalar_factor;
+				u = start_uv.m_x + (end_uv.m_x - start_uv.m_x) * scalar_factor;
+				v = start_uv.m_y + (end_uv.m_y - start_uv.m_y) * scalar_factor;
+			}
+			int tex_x = abs((int)(u * 64));
+			int tex_y = abs((int)(v * 64));
+			int index{ (64 * tex_y) + tex_x };
+			std::size_t leng{ sizeof(texture_buffer) };
+			if (index >= 0 && index < 16384)
+			{
+				std::uint32_t texture_colour{ texture_buffer[index] };
+				std::uint32_t pixel_colour{ apply_light_intensity(texture_colour, light_intensity) };
+				draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), texture_colour);
+			}
+			current_x += x_increment;
+			current_y += y_increment;
+			scalar_factor = vector::Vector2d<int>::get_scalar_factor({ x0, y0 }, { static_cast<int>(current_x), static_cast<int>(current_y) }, { x1, y1 });
+		}
+	}
+
 	void Display::draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour) const
 	{
 		if (x >= 0 && x < display_mode->w && y>= 0 &&  y < display_mode->h)
@@ -259,35 +310,44 @@ namespace display
 	//                         (x2,y2)
 	//
 	///////////////////////////////////////////////////////////////////////////////
-	void Display::fill_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	void Display::fill_triangle(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const bool render_texture, geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
 		triangle.sort_vertices_by_y();
 
 		if (triangle.m_points[1].m_y == triangle.m_points[2].m_y)
 		{
-			fill_flat_bottom_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, triangle, colour);
+			fill_flat_bottom_triangle(colour_buffer, texture_buffer, display_mode, render_flat_shaded, render_gourand_shaded, render_texture, triangle, colour);
 		}
 		else if (triangle.m_points[0].m_y == triangle.m_points[1].m_y)
 		{
-			fill_flat_top_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, triangle, colour);
+			fill_flat_top_triangle(colour_buffer, texture_buffer, display_mode, render_flat_shaded, render_gourand_shaded, render_texture, triangle, colour);
 		}
 		else {
 			vector::Vector2d<int> midpoint{ triangle.get_midpoint() };
 			double scalar_factor{ vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], midpoint, triangle.m_points[2]) };
 			double mp_intensity{ triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor };
+			vector::Vector3d weights{ triangle.get_barycentric_weights(midpoint) };
+			double mp_u{ triangle.m_uvs[0].m_x * weights.m_x + triangle.m_uvs[1].m_x * weights.m_y + triangle.m_uvs[2].m_x * weights.m_z };
+			double mp_v{ triangle.m_uvs[0].m_y * weights.m_x + triangle.m_uvs[1].m_y * weights.m_y + triangle.m_uvs[2].m_y * weights.m_z };
 			geo::Triangle<int> flat_bottom_triangle{ triangle.m_points[0], triangle.m_points[1], midpoint };
 			flat_bottom_triangle.m_light_intensity = triangle.m_light_intensity;
 			flat_bottom_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[0]);
 			flat_bottom_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[1]);
 			flat_bottom_triangle.m_per_vtx_lt_intensity.push_back(mp_intensity);
+			flat_bottom_triangle.m_uvs.push_back(triangle.m_uvs[0]);
+			flat_bottom_triangle.m_uvs.push_back(triangle.m_uvs[1]);
+			flat_bottom_triangle.m_uvs.push_back(vector::Vector2d<double>(mp_u, mp_v));
 			geo::Triangle<int> flat_top_triangle{ triangle.m_points[1], midpoint, triangle.m_points[2] };
 			flat_top_triangle.m_light_intensity = triangle.m_light_intensity;
 			flat_top_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[1]);
 			flat_top_triangle.m_per_vtx_lt_intensity.push_back(mp_intensity);
 			flat_top_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[2]);
-			fill_flat_bottom_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, flat_bottom_triangle, colour);
-			fill_flat_top_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, flat_top_triangle, colour);
+			flat_top_triangle.m_uvs.push_back(triangle.m_uvs[1]);
+			flat_top_triangle.m_uvs.push_back(vector::Vector2d<double>(mp_u, mp_v));
+			flat_top_triangle.m_uvs.push_back(triangle.m_uvs[2]);
+			fill_flat_bottom_triangle(colour_buffer, texture_buffer, display_mode, render_flat_shaded, render_gourand_shaded, render_texture, flat_bottom_triangle, colour);
+			fill_flat_top_triangle(colour_buffer, texture_buffer, display_mode, render_flat_shaded, render_gourand_shaded, render_texture, flat_top_triangle, colour);
 		}
 	}
 
@@ -304,7 +364,7 @@ namespace display
 	// b (x1,y1)------(x2,y2) c
 	//
 	///////////////////////////////////////////////////////////////////////////////
-	void Display::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	void Display::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const bool render_texture, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		double x_start_slope{ triangle.get_inverse_slope(1, 0) };
 		double x_end_slope{ triangle.get_inverse_slope(2, 0) };
@@ -312,24 +372,46 @@ namespace display
 		double x_end{ static_cast<double>(triangle.m_points[0].m_x) };
 		double start_intensity{ triangle.m_per_vtx_lt_intensity[0] };
 		double end_intensity{ triangle.m_per_vtx_lt_intensity[0] };
+		vector::Vector2d<double> start_uv{ triangle.m_uvs[0] };
+		vector::Vector2d<double> end_uv{ triangle.m_uvs[0] };
 		double scalar_factor_ab{ 0 };
 		double scalar_factor_ac{ 0 };
 		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
-		for (int i{ triangle.m_points[0].m_y }; i <= triangle.m_points[1].m_y; i++)
+		for (int y{ triangle.m_points[0].m_y }; y <= triangle.m_points[1].m_y; y++)
 		{
 			if (render_gourand_shaded)
 			{
-				draw_line(
-					colour_buffer,
-					display_mode,
-					x_start,
-					i,
-					x_end,
-					i,
-					start_intensity,
-					end_intensity,
-					colour
-				);
+				if (render_texture)
+				{
+					draw_line(
+						colour_buffer,
+						texture_buffer,
+						display_mode,
+						x_start,
+						y,
+						x_end,
+						y,
+						start_intensity,
+						end_intensity,
+						start_uv,
+						end_uv
+					);
+				}
+				else
+				{
+					draw_line(
+						colour_buffer,
+						display_mode,
+						x_start,
+						y,
+						x_end,
+						y,
+						start_intensity,
+						end_intensity,
+						colour
+					);
+				}
+				
 			}
 			if (render_flat_shaded)
 			{
@@ -337,9 +419,9 @@ namespace display
 					colour_buffer,
 					display_mode,
 					x_start,
-					i,
+					y,
 					x_end,
-					i,
+					y,
 					light_colour
 				);
 			}
@@ -351,10 +433,29 @@ namespace display
 							I=A+λ⋅(B−A)
 			Interpolate the intensity at each start and end pixels
 			*/
-			scalar_factor_ab = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[1]);
+			scalar_factor_ab = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), y }, triangle.m_points[1]);
 			start_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[1] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ab;
-			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_end), static_cast<int>(i) }, triangle.m_points[2]);
+			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_end), y }, triangle.m_points[2]);
 			end_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ab;
+
+			vector::Vector3d start_weights{ triangle.get_barycentric_weights({ static_cast<int>(x_start), y }) };
+			double start_u{ triangle.m_uvs[0].m_x * start_weights.m_x + triangle.m_uvs[1].m_x * start_weights.m_y + triangle.m_uvs[2].m_x * start_weights.m_z };
+			double start_v{ triangle.m_uvs[0].m_y * start_weights.m_x + triangle.m_uvs[1].m_y * start_weights.m_y + triangle.m_uvs[2].m_y * start_weights.m_z };
+			if (start_u > 1) start_u = 1.0;
+			if (start_u < 0) start_u = 0.0;
+			if (start_v > 1) start_v = 1.0;
+			if (start_v < 0) start_v = 0.0;
+			start_uv.m_x = start_u;
+			start_uv.m_y = start_v;
+			vector::Vector3d end_weights{ triangle.get_barycentric_weights({ static_cast<int>(x_end), y }) };
+			double end_u{ triangle.m_uvs[0].m_x * end_weights.m_x + triangle.m_uvs[1].m_x * end_weights.m_y + triangle.m_uvs[2].m_x * end_weights.m_z };
+			double end_v{ triangle.m_uvs[0].m_y * end_weights.m_x + triangle.m_uvs[1].m_y * end_weights.m_y + triangle.m_uvs[2].m_y * end_weights.m_z };
+			if (end_u > 1) end_u = 1.0;
+			if (end_u < 0) end_u = 0.0;
+			if (end_v > 1) end_v = 1.0;
+			if (end_v < 0) end_v = 0.0;
+			end_uv.m_x = end_u;
+			end_uv.m_y = end_v;
 		}
 	}
 
@@ -371,7 +472,7 @@ namespace display
 	//        (x2,y2) c
 	//
 	///////////////////////////////////////////////////////////////////////////////
-	void Display::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	void Display::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const bool render_texture, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
 	{
 		double x_start_slope{ triangle.get_inverse_slope(2, 0) };
 		double x_end_slope{ triangle.get_inverse_slope(2, 1) };
@@ -379,24 +480,45 @@ namespace display
 		double x_end{ static_cast<double>(triangle.m_points[2].m_x) };
 		double start_intensity{ triangle.m_per_vtx_lt_intensity[2] };
 		double end_intensity{ triangle.m_per_vtx_lt_intensity[2] };
+		vector::Vector2d<double> start_uv{ triangle.m_uvs[2] };
+		vector::Vector2d<double> end_uv{ triangle.m_uvs[2] };
 		double scalar_factor_ac{ 0 };
 		double scalar_factor_bc{ 0 };
 		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
-		for (int i{ triangle.m_points[2].m_y }; i >= triangle.m_points[0].m_y; i--)
+		for (int y{ triangle.m_points[2].m_y }; y >= triangle.m_points[0].m_y; y--)
 		{
 			if (render_gourand_shaded)
 			{
-				draw_line(
-					colour_buffer,
-					display_mode,
-					x_start,
-					i,
-					x_end,
-					i,
-					start_intensity,
-					end_intensity,
-					colour
-				);
+				if (render_texture)
+				{
+					draw_line(
+						colour_buffer,
+						texture_buffer,
+						display_mode,
+						x_start,
+						y,
+						x_end,
+						y,
+						start_intensity,
+						end_intensity,
+						start_uv,
+						end_uv
+					);
+				}
+				else
+				{
+					draw_line(
+						colour_buffer,
+						display_mode,
+						x_start,
+						y,
+						x_end,
+						y,
+						start_intensity,
+						end_intensity,
+						colour
+					);
+				}
 			}
 			if (render_flat_shaded)
 			{
@@ -404,9 +526,9 @@ namespace display
 					colour_buffer,
 					display_mode,
 					x_start,
-					i,
+					y,
 					x_end,
-					i,
+					y,
 					light_colour
 				);
 			}
@@ -418,10 +540,29 @@ namespace display
 							I=A+λ⋅(B−A)
 			Interpolate the intensity at each start and end pixels
 			*/
-			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[2]);
+			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(y) }, triangle.m_points[2]);
 			start_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ac;
-			scalar_factor_bc = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[1], { static_cast<int>(x_end), static_cast<int>(i) }, triangle.m_points[2]);
+			scalar_factor_bc = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[1], { static_cast<int>(x_end), static_cast<int>(y) }, triangle.m_points[2]);
 			end_intensity = triangle.m_per_vtx_lt_intensity[1] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[1]) * scalar_factor_bc;
+
+			vector::Vector3d start_weights{ triangle.get_barycentric_weights({ static_cast<int>(x_start), y }) };
+			double start_u{ triangle.m_uvs[0].m_x * start_weights.m_x + triangle.m_uvs[1].m_x * start_weights.m_y + triangle.m_uvs[2].m_x * start_weights.m_z };
+			double start_v{ triangle.m_uvs[0].m_y * start_weights.m_x + triangle.m_uvs[1].m_y * start_weights.m_y + triangle.m_uvs[2].m_y * start_weights.m_z };
+			if (start_u > 1) start_u = 1.0;
+			if (start_u < 0) start_u = 0.0;
+			if (start_v > 1) start_v = 1.0;
+			if (start_v < 0) start_v = 0.0;
+			start_uv.m_x = start_u;
+			start_uv.m_y = start_v;
+			vector::Vector3d end_weights{ triangle.get_barycentric_weights({ static_cast<int>(x_end), y }) };
+			double end_u{ triangle.m_uvs[0].m_x * end_weights.m_x + triangle.m_uvs[1].m_x * end_weights.m_y + triangle.m_uvs[2].m_x * end_weights.m_z };
+			double end_v{ triangle.m_uvs[0].m_y * end_weights.m_x + triangle.m_uvs[1].m_y * end_weights.m_y + triangle.m_uvs[2].m_y * end_weights.m_z };
+			if (end_u > 1) end_u = 1.0;
+			if (end_u < 0) end_u = 0.0;
+			if (end_v > 1) end_v = 1.0;
+			if (end_v < 0) end_v = 0.0;
+			end_uv.m_x = end_u;
+			end_uv.m_y = end_v;
 		}
 	}
 

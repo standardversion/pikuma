@@ -14,6 +14,7 @@
 #include "triangle.h"
 #include "utils.h"
 #include "matrix.h"
+#include "redBrickTex.h"
 
 void update(
 	std::vector<geo::Mesh>& meshes,
@@ -66,7 +67,7 @@ void update(
 				mesh_to_render.m_vertices[face.b - 1],
 				mesh_to_render.m_vertices[face.c - 1]
 			};
-
+			// normals
 			std::vector<vector::Vector3d> face_vtx_normals{
 				mesh_to_render.m_vertex_normals[face.a - 1],
 				mesh_to_render.m_vertex_normals[face.b - 1],
@@ -122,6 +123,13 @@ void update(
 			double light_intensity{ abs(per_vertex_normals[0].dot_product(light.m_direction))};
 			projected_triangle.m_light_intensity = light_intensity;
 
+			// uvs don't need to be transformed
+			std::vector<vector::Vector2d<double>> face_vtx_uvs{
+				mesh_to_render.m_uvs[face.a_uv - 1],
+				mesh_to_render.m_uvs[face.b_uv - 1],
+				mesh_to_render.m_uvs[face.c_uv - 1]
+
+			};
 			// project the point
 			counter = 0;
 			for (const auto& vertex : transformed_vertices)
@@ -129,6 +137,7 @@ void update(
 				vector::Vector2d<double> projected_point{ display.project_vec4d(display_mode, projection_matrix, vertex) };
 				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(transformed_normals[counter].dot_product(light.m_direction)));
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
+				projected_triangle.m_uvs.push_back(face_vtx_uvs[counter]);
 				counter++;
 			}
 			if (render_face_center || render_normals)
@@ -172,6 +181,7 @@ void render(
 	SDL_Renderer*& renderer,
 	SDL_Texture*& colour_buffer_texture,
 	std::uint32_t*& colour_buffer,
+	const std::uint32_t*& texture_buffer,
 	const SDL_DisplayMode* display_mode,
 	const std::uint32_t edge_colour,
 	const std::uint32_t bg_colour,
@@ -183,7 +193,8 @@ void render(
 	bool& render_face_center,
 	bool& render_normals,
 	bool render_flat_shaded,
-	bool render_gourand_shaded
+	bool render_gourand_shaded,
+	bool render_texture
 )
 {
 	bool render_wireframe{ false };
@@ -198,9 +209,11 @@ void render(
 		{
 			display.fill_triangle(
 				colour_buffer,
+				texture_buffer,
 				display_mode,
 				render_flat_shaded,
 				render_gourand_shaded,
+				render_texture,
 				triangle,
 				fill_colour
 			);
@@ -283,12 +296,12 @@ int main(int argc, char* argv[])
 	constexpr const std::uint32_t vertex_colour{ 0xFFFFFF00 };
 	constexpr const std::uint32_t fill_colour{ 0x00808080 };
 	const shading::Light directional_light{};
-
+	const std::uint32_t* texture_buffer{ (uint32_t*)texture::REDBRICK_TEXTURE };
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\teapot.obj" };
+	geo::Mesh mesh{ ".\\assets\\cube.obj" };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
@@ -296,8 +309,9 @@ int main(int argc, char* argv[])
 	bool render_face_center{ false };
 	bool render_normals{ false };
 	bool backface_culling{ true };
-	bool render_flat_shaded{ true };
-	bool render_gourand_shaded{ false };
+	bool render_flat_shaded{ false };
+	bool render_gourand_shaded{ true };
+	bool render_texture{ true };
 	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
 	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
 	const double znear{ 0.1 };
@@ -305,7 +319,7 @@ int main(int argc, char* argv[])
 	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
-		input.process(is_running, render_mode, backface_culling, render_flat_shaded, render_gourand_shaded, event);
+		input.process(is_running, render_mode, backface_culling, render_flat_shaded, render_gourand_shaded, render_texture, event);
 		update(
 			meshes,
 			projection_matrix,
@@ -323,6 +337,7 @@ int main(int argc, char* argv[])
 			renderer,
 			colour_buffer_texture,
 			colour_buffer,
+			texture_buffer,
 			&display_mode,
 			edge_colour,
 			bg_colour,
@@ -334,7 +349,8 @@ int main(int argc, char* argv[])
 			render_face_center,
 			render_normals,
 			render_flat_shaded,
-			render_gourand_shaded
+			render_gourand_shaded,
+			render_texture
 		);
 	}
 	display.cleanup(window, renderer, colour_buffer);
