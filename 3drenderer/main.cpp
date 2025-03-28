@@ -21,7 +21,6 @@ void update(
 	const matrix::Matrix4x4& projection_matrix,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
 	const vector::Vector3d& camera_position,
-	const display::Display& display,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
 	const bool backface_culling,
@@ -134,7 +133,7 @@ void update(
 			counter = 0;
 			for (const auto& vertex : transformed_vertices)
 			{
-				vector::Vector2d<double> projected_point{ display.project_vec4d(display_mode, projection_matrix, vertex) };
+				vector::Vector2d<double> projected_point{ display::project_vec4d(display_mode, projection_matrix, vertex) };
 				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(transformed_normals[counter].dot_product(light.m_direction)));
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
 				projected_triangle.m_uvs.push_back(face_vtx_uvs[counter]);
@@ -143,7 +142,7 @@ void update(
 			if (render_face_center || render_normals)
 			{
 				vector::Vector3d face_center{ mesh_to_render.get_face_center(transformed_vertices) };
-				vector::Vector2d<double> projected_center_point{ display.project_vec4d(display_mode, projection_matrix, face_center) };
+				vector::Vector2d<double> projected_center_point{ display::project_vec4d(display_mode, projection_matrix, face_center) };
 
 				projected_triangle.m_center.m_x = projected_center_point.m_x;
 				projected_triangle.m_center.m_y = projected_center_point.m_y;
@@ -156,7 +155,7 @@ void update(
 					face_normal.m_z += face_center.m_z;
 					face_normal.normalize();
 			
-					vector::Vector2d<double> projected_face_normal_point{ display.project_vec4d(display_mode, projection_matrix, face_normal) };
+					vector::Vector2d<double> projected_face_normal_point{ display::project_vec4d(display_mode, projection_matrix, face_normal) };
 
 					projected_triangle.m_face_normal.m_x = projected_face_normal_point.m_x;
 					projected_triangle.m_face_normal.m_y = projected_face_normal_point.m_y;
@@ -177,7 +176,6 @@ void update(
 }
 
 void render(
-	const display::Display& display,
 	SDL_Renderer*& renderer,
 	SDL_Texture*& colour_buffer_texture,
 	std::uint32_t*& colour_buffer,
@@ -200,7 +198,7 @@ void render(
 	bool render_wireframe{ false };
 	bool render_vertex{ false };
 	bool render_shaded{ false };
-	display.activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
+	display::activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
 	//display.draw_grid(colour_buffer, display_mode, edge_colour, bg_colour, grid_on);
 
 	for (auto& triangle : triangles_to_render)
@@ -208,7 +206,6 @@ void render(
 		if (render_shaded)
 		{
 			triangle.fill_triangle(
-				display,
 				colour_buffer,
 				texture_buffer,
 				display_mode,
@@ -222,7 +219,6 @@ void render(
 		if (render_wireframe)
 		{
 			triangle.draw_triangle(
-				display,
 				colour_buffer,
 				display_mode,
 				edge_colour
@@ -233,7 +229,7 @@ void render(
 		{
 			for (const auto& point : triangle.m_points)
 			{
-				display.draw_rect(
+				display::draw_rect(
 					colour_buffer,
 					display_mode,
 					point.m_x,
@@ -246,7 +242,7 @@ void render(
 		}
 		if (render_face_center)
 		{
-			display.draw_rect(
+			display::draw_rect(
 				colour_buffer,
 				display_mode,
 				triangle.m_center.m_x,
@@ -258,7 +254,7 @@ void render(
 		}
 		if (render_normals)
 		{
-			display.draw_line(
+			display::draw_line(
 				colour_buffer,
 				display_mode,
 				triangle.m_center.m_x,
@@ -271,9 +267,9 @@ void render(
 	}
 
 	// render the colour buffer
-	display.render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer);
+	display::render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer);
 	// fill the colour buffer with a colour value
-	display.clear_colour_buffer(colour_buffer, display_mode, bg_colour);
+	display::clear_colour_buffer(colour_buffer, display_mode, bg_colour);
 
 	// Update the screen with any rendering performed since the previous call.
 	SDL_RenderPresent(renderer);
@@ -287,9 +283,7 @@ int main(int argc, char* argv[])
 	SDL_Renderer* renderer{ nullptr };
 	SDL_Texture* colour_buffer_texture{ nullptr };
 	SDL_DisplayMode display_mode;
-	display::Display display{};
-	const input::Input input{};
-	bool is_running{ display.setup(colour_buffer_texture, window, renderer, &display_mode) };
+	bool is_running{ display::setup(colour_buffer_texture, window, renderer, &display_mode) };
 	std::uint32_t* colour_buffer{ new std::uint32_t[display_mode.w * display_mode.h]{} };
 	constexpr const std::uint32_t bg_colour{ 0x00000000 };
 	constexpr const std::uint32_t edge_colour{ 0xFFFFFFFF };
@@ -319,13 +313,12 @@ int main(int argc, char* argv[])
 	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
-		input.process(is_running, render_mode, backface_culling, render_flat_shaded, render_gourand_shaded, render_texture, event);
+		input::process(is_running, render_mode, backface_culling, render_flat_shaded, render_gourand_shaded, render_texture, event);
 		update(
 			meshes,
 			projection_matrix,
 			triangles_to_render,
 			camera_postion,
-			display,
 			&display_mode,
 			previous_frame_time,
 			backface_culling,
@@ -333,7 +326,6 @@ int main(int argc, char* argv[])
 			render_face_center,
 			render_normals);
 		render(
-			display,
 			renderer,
 			colour_buffer_texture,
 			colour_buffer,
@@ -353,6 +345,6 @@ int main(int argc, char* argv[])
 			render_texture
 		);
 	}
-	display.cleanup(window, renderer, colour_buffer);
+	display::cleanup(window, renderer, colour_buffer);
 	return 0;
 }

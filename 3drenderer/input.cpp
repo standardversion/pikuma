@@ -2,7 +2,7 @@
 
 namespace input
 {
-	void Input::process(
+	void process(
 		bool& is_running,
 		int& render_mode,
 		bool& backface_culling,
@@ -10,7 +10,7 @@ namespace input
 		bool& render_gourand_shaded,
 		bool& render_texture,
 		SDL_Event& event
-	) const
+	)
 	{
 		
 		SDL_PollEvent(&event);

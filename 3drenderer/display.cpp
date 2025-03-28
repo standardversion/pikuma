@@ -3,7 +3,7 @@
 
 namespace display
 {
-	void Display::activate_render_mode(const int render_mode, bool& render_wireframe, bool& render_vertex, bool& render_shaded, bool& render_face_center, bool& render_normals) const
+	void activate_render_mode(const int render_mode, bool& render_wireframe, bool& render_vertex, bool& render_shaded, bool& render_face_center, bool& render_normals)
 	{
 		switch (render_mode)
 		{
@@ -75,7 +75,7 @@ namespace display
 		}
 	}
 
-	std::uint32_t Display::apply_light_intensity(const std::uint32_t colour, double percentage_factor) const
+	std::uint32_t apply_light_intensity(const std::uint32_t colour, double percentage_factor)
 	{
 		if (percentage_factor < 0) percentage_factor = 0;
 		if (percentage_factor > 1) percentage_factor = 1;
@@ -87,7 +87,7 @@ namespace display
 		return std::uint32_t{ a | (r & 0x00FF0000) | (g & 0x0000FF00) | (b & 0x000000FF) };
 	}
 
-	void Display::cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer) const
+	void cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer)
 	{
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(window);
@@ -99,7 +99,7 @@ namespace display
 		colour_buffer = nullptr;
 	}
 
-	void Display::clear_colour_buffer(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const
+	void clear_colour_buffer(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour)
 	{
 		// our 2d pixels (x * y) are laid out in a 1d array
 		// so for example, if we're dealing with 1920x1080 the first 1920 indices for the array
@@ -116,7 +116,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_grid(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on) const
+	void draw_grid(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on)
 	{
 		for (int y{ 0 }; y < display_mode->h; y++)
 		{
@@ -130,7 +130,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour) const
+	void draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour)
 	{
 		int delta_x{ x1 - x0 };
 		int delta_y{ y1 - y0 };
@@ -150,7 +150,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const std::uint32_t colour) const
+	void draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const std::uint32_t colour)
 	{
 		int delta_x{ x1 - x0 };
 		int delta_y{ y1 - y0 };
@@ -185,7 +185,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_line(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const vector::Vector2d<double>& start_uv, const vector::Vector2d<double>& end_uv) const
+	void draw_line(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const vector::Vector2d<double>& start_uv, const vector::Vector2d<double>& end_uv)
 	{
 		int delta_x{ x1 - x0 };
 		int delta_y{ y1 - y0 };
@@ -236,7 +236,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour) const
+	void draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour)
 	{
 		if (x >= 0 && x < display_mode->w && y>= 0 &&  y < display_mode->h)
 		{
@@ -245,7 +245,7 @@ namespace display
 		
 	}
 
-	void Display::draw_rect(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, const std::uint32_t colour) const
+	void draw_rect(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, const std::uint32_t colour)
 	{
 		for (int i{ 0 }; i < width; i++)
 		{
@@ -256,7 +256,7 @@ namespace display
 		}
 	}
 
-	bool Display::initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode) const
+	bool initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode)
 	{
 		// Initialize the SDL library
 		// SDL_INIT_EVERYTHING flag initializes audio, video, controller etc subsystems
@@ -300,7 +300,7 @@ namespace display
 		return true;
 	}
 
-	vector::Vector2d<double> Display::project_vec4d(const SDL_DisplayMode* display_mode, const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d) const
+	vector::Vector2d<double> project_vec4d(const SDL_DisplayMode* display_mode, const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d)
 	{
 		// apply project matrix
 		vector::Vector4d projected_vertex{ projection_matrix.project(vec4d) };
@@ -318,7 +318,7 @@ namespace display
 		return projected_point;
 	}
 
-	void Display::render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer) const
+	void render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer)
 	{
 		// update the texture with the contents of the colour buffer
 		SDL_UpdateTexture(
@@ -331,7 +331,7 @@ namespace display
 		SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
 	}
 
-	bool Display::setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode) const
+	bool setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode)
 	{
 		// first create the window and rendering context
 		bool initialized = initialize_window(window, renderer, displaymode);
