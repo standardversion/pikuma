@@ -207,24 +207,24 @@ void render(
 	{
 		if (render_shaded)
 		{
-			display.fill_triangle(
+			triangle.fill_triangle(
+				display,
 				colour_buffer,
 				texture_buffer,
 				display_mode,
 				render_flat_shaded,
 				render_gourand_shaded,
 				render_texture,
-				triangle,
 				fill_colour
 			);
 		}
 		
 		if (render_wireframe)
 		{
-			display.draw_triangle(
+			triangle.draw_triangle(
+				display,
 				colour_buffer,
 				display_mode,
-				triangle,
 				edge_colour
 			);
 		}
