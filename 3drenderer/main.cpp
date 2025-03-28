@@ -205,20 +205,31 @@ void render(
 	{
 		if (render_shaded)
 		{
-			triangle.fill_triangle(
-				colour_buffer,
-				texture_buffer,
-				display_mode,
-				render_flat_shaded,
-				render_gourand_shaded,
-				render_texture,
-				fill_colour
-			);
+			if (render_gourand_shaded)
+			{
+				triangle.gourand_shade(
+					colour_buffer,
+					texture_buffer,
+					display_mode,
+					render_texture,
+					fill_colour
+				);
+			}
+			if (render_flat_shaded)
+			{
+				triangle.flat_shade(
+					colour_buffer,
+					texture_buffer,
+					display_mode,
+					render_texture,
+					fill_colour
+				);
+			}
 		}
 		
 		if (render_wireframe)
 		{
-			triangle.draw_triangle(
+			triangle.draw(
 				colour_buffer,
 				display_mode,
 				edge_colour
@@ -303,9 +314,9 @@ int main(int argc, char* argv[])
 	bool render_face_center{ false };
 	bool render_normals{ false };
 	bool backface_culling{ true };
-	bool render_flat_shaded{ false };
-	bool render_gourand_shaded{ true };
-	bool render_texture{ true };
+	bool render_flat_shaded{ true };
+	bool render_gourand_shaded{ false };
+	bool render_texture{ false };
 	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
 	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
 	const double znear{ 0.1 };

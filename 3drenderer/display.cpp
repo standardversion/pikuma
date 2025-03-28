@@ -130,6 +130,7 @@ namespace display
 		}
 	}
 
+	// draw line for flat shading
 	void draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour)
 	{
 		int delta_x{ x1 - x0 };
@@ -150,6 +151,53 @@ namespace display
 		}
 	}
 
+	// draw line for texture with flat shaing
+	void draw_line(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const vector::Vector2d<double>& start_uv, const vector::Vector2d<double>& end_uv, double light_intensity)
+	{
+		int delta_x{ x1 - x0 };
+		int delta_y{ y1 - y0 };
+
+		int side_length = abs(delta_x) >= abs(delta_y) ? abs(delta_x) : abs(delta_y);
+		// Find out how much we should increment in x and y in each iteration
+		double x_increment = delta_x / static_cast<double>(side_length);
+		double y_increment = delta_y / static_cast<double>(side_length);
+
+		double current_x{ static_cast<double>(x0) };
+		double current_y{ static_cast<double>(y0) };
+		double scalar_factor{ 0 };
+		double u{ start_uv.m_x };
+		double v{ start_uv.m_y };
+		for (int i{ 0 }; i <= side_length; i++)
+		{
+			if (i == side_length) {
+				u = end_uv.m_x;
+				v = end_uv.m_y;
+			}
+			else if (i == 0) {
+				u = start_uv.m_x;
+				v = start_uv.m_y;
+			}
+			else {
+				u = start_uv.m_x + (end_uv.m_x - start_uv.m_x) * scalar_factor;
+				v = start_uv.m_y + (end_uv.m_y - start_uv.m_y) * scalar_factor;
+			}
+			int tex_x = abs((int)(u * 64));
+			int tex_y = abs((int)(v * 64));
+			int index{ (64 * tex_y) + tex_x };
+			std::size_t leng{ sizeof(texture_buffer) };
+			if (index >= 0 && index < 16384)
+			{
+				std::uint32_t texture_colour{ texture_buffer[index] };
+				std::uint32_t pixel_colour{ apply_light_intensity(texture_colour, light_intensity) };
+				draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), pixel_colour);
+			}
+			current_x += x_increment;
+			current_y += y_increment;
+			scalar_factor = vector::Vector2d<int>::get_scalar_factor({ x0, y0 }, { static_cast<int>(current_x), static_cast<int>(current_y) }, { x1, y1 });
+		}
+	}
+
+	// draw line for gourand shading
 	void draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const std::uint32_t colour)
 	{
 		int delta_x{ x1 - x0 };
@@ -185,6 +233,7 @@ namespace display
 		}
 	}
 
+	// draw line for texture with gourand shading
 	void draw_line(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const vector::Vector2d<double>& start_uv, const vector::Vector2d<double>& end_uv)
 	{
 		int delta_x{ x1 - x0 };
@@ -228,7 +277,7 @@ namespace display
 			{
 				std::uint32_t texture_colour{ texture_buffer[index] };
 				std::uint32_t pixel_colour{ apply_light_intensity(texture_colour, light_intensity) };
-				draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), texture_colour);
+				draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), pixel_colour);
 			}
 			current_x += x_increment;
 			current_y += y_increment;

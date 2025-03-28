@@ -30,10 +30,16 @@ namespace geo
 		vector::Vector2d<T> get_midpoint() const;
 		double get_inverse_slope(std::size_t lower_pt_index, std::size_t higher_pt_index) const;
 		vector::Vector3d get_barycentric_weights(const vector::Vector2d<T>& p) const;
-		void draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const;
-		void fill_triangle(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const bool render_texture, const std::uint32_t colour);
-		void fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const bool render_texture, const std::uint32_t colour) const;
-		void fill_flat_top_triangle(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const bool render_texture, const std::uint32_t colour) const;
+		//rendering related
+		void draw(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const;
+		//flat shaded
+		void flat_shade(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour);
+		void flat_shade_flat_bottom(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
+		void flat_shade_flat_top(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
+		//gourand shaded
+		void gourand_shade(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour);
+		void gourand_shade_flat_bottom(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
+		void gourand_shade_flat_top(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
 
 		std::vector<vector::Vector2d<T>> m_points;
 		std::vector<vector::Vector2d<double>> m_uvs;
@@ -176,7 +182,7 @@ namespace geo
 	}
 
 	template <typename T>
-	void Triangle<T>::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const
+	void Triangle<T>::draw(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const
 	{
 		display::draw_line(
 			colour_buffer,
@@ -207,6 +213,9 @@ namespace geo
 		);
 	}
 
+	
+	// FLAT SHADING
+	// 
 	///////////////////////////////////////////////////////////////////////////////
 	// Draw a filled triangle with the flat-top/flat-bottom method
 	// We split the original triangle in two, half flat-bottom and half flat-top
@@ -231,18 +240,229 @@ namespace geo
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void Triangle<T>::fill_triangle(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const bool render_texture, const std::uint32_t colour)
+	void Triangle<T>::flat_shade(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour)
 	{
 		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
 		sort_vertices_by_y();
 
 		if (m_points[1].m_y == m_points[2].m_y)
 		{
-			fill_flat_bottom_triangle(colour_buffer, texture_buffer, display_mode, render_flat_shaded, render_gourand_shaded, render_texture, colour);
+			flat_shade_flat_bottom(colour_buffer, texture_buffer, display_mode, render_texture, colour);
 		}
 		else if (m_points[0].m_y == m_points[1].m_y)
 		{
-			fill_flat_top_triangle(colour_buffer, texture_buffer, display_mode, render_flat_shaded, render_gourand_shaded, render_texture, colour);
+			flat_shade_flat_top(colour_buffer, texture_buffer, display_mode, render_texture, colour);
+		}
+		else {
+			vector::Vector2d<int> midpoint{ get_midpoint() };
+			vector::Vector3d weights{ get_barycentric_weights(midpoint) };
+			double mp_u{ m_uvs[0].m_x * weights.m_x + m_uvs[1].m_x * weights.m_y + m_uvs[2].m_x * weights.m_z };
+			double mp_v{ m_uvs[0].m_y * weights.m_x + m_uvs[1].m_y * weights.m_y + m_uvs[2].m_y * weights.m_z };
+			geo::Triangle<int> flat_bottom_triangle{ m_points[0], m_points[1], midpoint };
+			flat_bottom_triangle.m_light_intensity = m_light_intensity;
+			flat_bottom_triangle.m_uvs.push_back(m_uvs[0]);
+			flat_bottom_triangle.m_uvs.push_back(m_uvs[1]);
+			flat_bottom_triangle.m_uvs.push_back(vector::Vector2d<double>(mp_u, mp_v));
+			geo::Triangle<int> flat_top_triangle{ m_points[1], midpoint, m_points[2] };
+			flat_top_triangle.m_light_intensity = m_light_intensity;
+			flat_top_triangle.m_uvs.push_back(m_uvs[1]);
+			flat_top_triangle.m_uvs.push_back(vector::Vector2d<double>(mp_u, mp_v));
+			flat_top_triangle.m_uvs.push_back(m_uvs[2]);
+			flat_bottom_triangle.flat_shade_flat_bottom(colour_buffer, texture_buffer, display_mode, render_texture, colour);
+			flat_top_triangle.flat_shade_flat_top(colour_buffer, texture_buffer, display_mode, render_texture, colour);
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////////////////
+	// Draw a filled a triangle with a flat bottom
+	///////////////////////////////////////////////////////////////////////////////
+	//
+	//        (x0,y0) a
+	//          / \
+	//         /   \
+	//        /     \
+	//       /       \
+	//      /         \
+	// b (x1,y1)------(x2,y2) c
+	//
+	///////////////////////////////////////////////////////////////////////////////
+	template <typename T>
+	void Triangle<T>::flat_shade_flat_bottom(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const
+	{
+		double x_start_slope{ get_inverse_slope(1, 0) };
+		double x_end_slope{ get_inverse_slope(2, 0) };
+		double x_start{ static_cast<double>(m_points[0].m_x) };
+		double x_end{ static_cast<double>(m_points[0].m_x) };
+		vector::Vector2d<double> start_uv{ m_uvs[0] };
+		vector::Vector2d<double> end_uv{ m_uvs[0] };
+		const std::uint32_t light_colour{ display::apply_light_intensity(colour, m_light_intensity) };
+		for (int y{ m_points[0].m_y }; y <= m_points[1].m_y; y++)
+		{
+			if (render_texture)
+			{
+				display::draw_line(
+					colour_buffer,
+					texture_buffer,
+					display_mode,
+					x_start,
+					y,
+					x_end,
+					y,
+					start_uv,
+					end_uv,
+					m_light_intensity
+				);
+			}
+			else
+			{
+				display::draw_line(
+					colour_buffer,
+					display_mode,
+					x_start,
+					y,
+					x_end,
+					y,
+					light_colour
+				);
+			}
+			x_start += x_start_slope;
+			x_end += x_end_slope;
+
+			vector::Vector3d start_weights{ get_barycentric_weights({ static_cast<int>(x_start), y }) };
+			double start_u{ m_uvs[0].m_x * start_weights.m_x + m_uvs[1].m_x * start_weights.m_y + m_uvs[2].m_x * start_weights.m_z };
+			double start_v{ m_uvs[0].m_y * start_weights.m_x + m_uvs[1].m_y * start_weights.m_y + m_uvs[2].m_y * start_weights.m_z };
+			if (start_u > 1) start_u = 1.0;
+			if (start_u < 0) start_u = 0.0;
+			if (start_v > 1) start_v = 1.0;
+			if (start_v < 0) start_v = 0.0;
+			start_uv.m_x = start_u;
+			start_uv.m_y = start_v;
+			vector::Vector3d end_weights{ get_barycentric_weights({ static_cast<int>(x_end), y }) };
+			double end_u{ m_uvs[0].m_x * end_weights.m_x + m_uvs[1].m_x * end_weights.m_y + m_uvs[2].m_x * end_weights.m_z };
+			double end_v{ m_uvs[0].m_y * end_weights.m_x + m_uvs[1].m_y * end_weights.m_y + m_uvs[2].m_y * end_weights.m_z };
+			if (end_u > 1) end_u = 1.0;
+			if (end_u < 0) end_u = 0.0;
+			if (end_v > 1) end_v = 1.0;
+			if (end_v < 0) end_v = 0.0;
+			end_uv.m_x = end_u;
+			end_uv.m_y = end_v;
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////////////////
+	// Draw a filled a triangle with a flat top
+	///////////////////////////////////////////////////////////////////////////////
+	//
+	// a (x0,y0)------(x1,y1) b
+	//      \         /
+	//       \       /
+	//        \     /
+	//         \   /
+	//          \ /
+	//        (x2,y2) c
+	//
+	///////////////////////////////////////////////////////////////////////////////
+	template <typename T>
+	void Triangle<T>::flat_shade_flat_top(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const
+	{
+		double x_start_slope{ get_inverse_slope(2, 0) };
+		double x_end_slope{ get_inverse_slope(2, 1) };
+		double x_start{ static_cast<double>(m_points[2].m_x) };
+		double x_end{ static_cast<double>(m_points[2].m_x) };
+		vector::Vector2d<double> start_uv{ m_uvs[2] };
+		vector::Vector2d<double> end_uv{ m_uvs[2] };
+		const std::uint32_t light_colour{ display::apply_light_intensity(colour, m_light_intensity) };
+		for (int y{ m_points[2].m_y }; y >= m_points[0].m_y; y--)
+		{
+			if (render_texture)
+			{
+				display::draw_line(
+					colour_buffer,
+					texture_buffer,
+					display_mode,
+					x_start,
+					y,
+					x_end,
+					y,
+					start_uv,
+					end_uv,
+					m_light_intensity
+				);
+			}
+			else
+			{
+				display::draw_line(
+					colour_buffer,
+					display_mode,
+					x_start,
+					y,
+					x_end,
+					y,
+					light_colour
+				);
+			}
+			x_start -= x_start_slope;
+			x_end -= x_end_slope;
+
+			vector::Vector3d start_weights{ get_barycentric_weights({ static_cast<int>(x_start), y }) };
+			double start_u{ m_uvs[0].m_x * start_weights.m_x + m_uvs[1].m_x * start_weights.m_y + m_uvs[2].m_x * start_weights.m_z };
+			double start_v{ m_uvs[0].m_y * start_weights.m_x + m_uvs[1].m_y * start_weights.m_y + m_uvs[2].m_y * start_weights.m_z };
+			if (start_u > 1) start_u = 1.0;
+			if (start_u < 0) start_u = 0.0;
+			if (start_v > 1) start_v = 1.0;
+			if (start_v < 0) start_v = 0.0;
+			start_uv.m_x = start_u;
+			start_uv.m_y = start_v;
+			vector::Vector3d end_weights{ get_barycentric_weights({ static_cast<int>(x_end), y }) };
+			double end_u{ m_uvs[0].m_x * end_weights.m_x + m_uvs[1].m_x * end_weights.m_y + m_uvs[2].m_x * end_weights.m_z };
+			double end_v{ m_uvs[0].m_y * end_weights.m_x + m_uvs[1].m_y * end_weights.m_y + m_uvs[2].m_y * end_weights.m_z };
+			if (end_u > 1) end_u = 1.0;
+			if (end_u < 0) end_u = 0.0;
+			if (end_v > 1) end_v = 1.0;
+			if (end_v < 0) end_v = 0.0;
+			end_uv.m_x = end_u;
+			end_uv.m_y = end_v;
+		}
+	}
+
+	// GOURAND SHADING
+	// 
+	///////////////////////////////////////////////////////////////////////////////
+	// Draw a filled triangle with the flat-top/flat-bottom method
+	// We split the original triangle in two, half flat-bottom and half flat-top
+	///////////////////////////////////////////////////////////////////////////////
+	//
+	//          (x0,y0)
+	//            / \
+	//           /   \
+	//          /     \
+	//         /       \
+	//        /         \
+	//   (x1,y1)------(Mx,My)
+	//       \_           \
+	//          \_         \
+	//             \_       \
+	//                \_     \
+	//                   \    \
+	//                     \_  \
+	//                        \_\
+	//                           \
+	//                         (x2,y2)
+	//
+	///////////////////////////////////////////////////////////////////////////////
+	template <typename T>
+	void Triangle<T>::gourand_shade(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour)
+	{
+		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
+		sort_vertices_by_y();
+
+		if (m_points[1].m_y == m_points[2].m_y)
+		{
+			gourand_shade_flat_bottom(colour_buffer, texture_buffer, display_mode, render_texture, colour);
+		}
+		else if (m_points[0].m_y == m_points[1].m_y)
+		{
+			gourand_shade_flat_top(colour_buffer, texture_buffer, display_mode, render_texture, colour);
 		}
 		else {
 			vector::Vector2d<int> midpoint{ get_midpoint() };
@@ -267,8 +487,8 @@ namespace geo
 			flat_top_triangle.m_uvs.push_back(m_uvs[1]);
 			flat_top_triangle.m_uvs.push_back(vector::Vector2d<double>(mp_u, mp_v));
 			flat_top_triangle.m_uvs.push_back(m_uvs[2]);
-			flat_bottom_triangle.fill_flat_bottom_triangle(colour_buffer, texture_buffer, display_mode, render_flat_shaded, render_gourand_shaded, render_texture, colour);
-			flat_top_triangle.fill_flat_top_triangle(colour_buffer, texture_buffer, display_mode, render_flat_shaded, render_gourand_shaded, render_texture, colour);
+			flat_bottom_triangle.gourand_shade_flat_bottom(colour_buffer, texture_buffer, display_mode, render_texture, colour);
+			flat_top_triangle.gourand_shade_flat_top(colour_buffer, texture_buffer, display_mode, render_texture, colour);
 		}
 	}
 
@@ -286,7 +506,7 @@ namespace geo
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void Triangle<T>::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const bool render_texture, const std::uint32_t colour) const
+	void Triangle<T>::gourand_shade_flat_bottom(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const
 	{
 		double x_start_slope{ get_inverse_slope(1, 0) };
 		double x_end_slope{ get_inverse_slope(2, 0) };
@@ -301,41 +521,23 @@ namespace geo
 		const std::uint32_t light_colour{ display::apply_light_intensity(colour, m_light_intensity) };
 		for (int y{ m_points[0].m_y }; y <= m_points[1].m_y; y++)
 		{
-			if (render_gourand_shaded)
+			if (render_texture)
 			{
-				if (render_texture)
-				{
-					display::draw_line(
-						colour_buffer,
-						texture_buffer,
-						display_mode,
-						x_start,
-						y,
-						x_end,
-						y,
-						start_intensity,
-						end_intensity,
-						start_uv,
-						end_uv
-					);
-				}
-				else
-				{
-					display::draw_line(
-						colour_buffer,
-						display_mode,
-						x_start,
-						y,
-						x_end,
-						y,
-						start_intensity,
-						end_intensity,
-						colour
-					);
-				}
-
+				display::draw_line(
+					colour_buffer,
+					texture_buffer,
+					display_mode,
+					x_start,
+					y,
+					x_end,
+					y,
+					start_intensity,
+					end_intensity,
+					start_uv,
+					end_uv
+				);
 			}
-			if (render_flat_shaded)
+			else
 			{
 				display::draw_line(
 					colour_buffer,
@@ -344,7 +546,9 @@ namespace geo
 					y,
 					x_end,
 					y,
-					light_colour
+					start_intensity,
+					end_intensity,
+					colour
 				);
 			}
 			x_start += x_start_slope;
@@ -395,7 +599,7 @@ namespace geo
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void Triangle<T>::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const bool render_texture, const std::uint32_t colour) const
+	void Triangle<T>::gourand_shade_flat_top(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const
 	{
 		double x_start_slope{ get_inverse_slope(2, 0) };
 		double x_end_slope{ get_inverse_slope(2, 1) };
@@ -410,40 +614,23 @@ namespace geo
 		const std::uint32_t light_colour{ display::apply_light_intensity(colour, m_light_intensity) };
 		for (int y{ m_points[2].m_y }; y >= m_points[0].m_y; y--)
 		{
-			if (render_gourand_shaded)
+			if (render_texture)
 			{
-				if (render_texture)
-				{
-					display::draw_line(
-						colour_buffer,
-						texture_buffer,
-						display_mode,
-						x_start,
-						y,
-						x_end,
-						y,
-						start_intensity,
-						end_intensity,
-						start_uv,
-						end_uv
-					);
-				}
-				else
-				{
-					display::draw_line(
-						colour_buffer,
-						display_mode,
-						x_start,
-						y,
-						x_end,
-						y,
-						start_intensity,
-						end_intensity,
-						colour
-					);
-				}
+				display::draw_line(
+					colour_buffer,
+					texture_buffer,
+					display_mode,
+					x_start,
+					y,
+					x_end,
+					y,
+					start_intensity,
+					end_intensity,
+					start_uv,
+					end_uv
+				);
 			}
-			if (render_flat_shaded)
+			else
 			{
 				display::draw_line(
 					colour_buffer,
@@ -452,7 +639,9 @@ namespace geo
 					y,
 					x_end,
 					y,
-					light_colour
+					start_intensity,
+					end_intensity,
+					colour
 				);
 			}
 			x_start -= x_start_slope;
