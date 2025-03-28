@@ -7,7 +7,7 @@ namespace input
 		int& render_mode,
 		bool& backface_culling,
 		bool& render_flat_shaded,
-		bool& render_gourand_shaded,
+		bool& render_gouraud_shaded,
 		bool& render_texture,
 		SDL_Event& event
 	)
@@ -46,12 +46,12 @@ namespace input
 				backface_culling = false;
 			else if (event.key.keysym.sym == SDLK_g)
 			{
-				render_gourand_shaded = true;
+				render_gouraud_shaded = true;
 				render_flat_shaded = false;
 			}
 			else if (event.key.keysym.sym == SDLK_f)
 			{
-				render_gourand_shaded = false;
+				render_gouraud_shaded = false;
 				render_flat_shaded = true;
 			}
 			else if (event.key.keysym.sym == SDLK_t)

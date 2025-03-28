@@ -197,7 +197,7 @@ namespace display
 		}
 	}
 
-	// draw line for gourand shading
+	// draw line for gouraud shading
 	void draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const std::uint32_t colour)
 	{
 		int delta_x{ x1 - x0 };
@@ -212,7 +212,7 @@ namespace display
 		double current_y{ static_cast<double>(y0) };
 		double scalar_factor{ 0 };
 		double light_intensity{ start_i };
-		// for gourand shading, interpolate the intensity at each pixel based on 
+		// for gouraud shading, interpolate the intensity at each pixel based on 
 		// the intensity at the start and the end
 		for (int i{ 0 }; i <= side_length; i++)
 		{
@@ -233,7 +233,7 @@ namespace display
 		}
 	}
 
-	// draw line for texture with gourand shading
+	// draw line for texture with gouraud shading
 	void draw_line(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const vector::Vector2d<double>& start_uv, const vector::Vector2d<double>& end_uv)
 	{
 		int delta_x{ x1 - x0 };
@@ -250,7 +250,7 @@ namespace display
 		double light_intensity{ start_i };
 		double u{ start_uv.m_x };
 		double v{ start_uv.m_y };
-		// for gourand shading, interpolate the intensity at each pixel based on 
+		// for gouraud shading, interpolate the intensity at each pixel based on 
 		// the intensity at the start and the end
 		for (int i{ 0 }; i <= side_length; i++)
 		{

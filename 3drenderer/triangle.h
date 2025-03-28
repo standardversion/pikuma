@@ -36,10 +36,10 @@ namespace geo
 		void flat_shade(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour);
 		void flat_shade_flat_bottom(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
 		void flat_shade_flat_top(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
-		//gourand shaded
-		void gourand_shade(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour);
-		void gourand_shade_flat_bottom(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
-		void gourand_shade_flat_top(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
+		//gouraud shaded
+		void gouraud_shade(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour);
+		void gouraud_shade_flat_bottom(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
+		void gouraud_shade_flat_top(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const;
 
 		std::vector<vector::Vector2d<T>> m_points;
 		std::vector<vector::Vector2d<double>> m_uvs;
@@ -451,18 +451,18 @@ namespace geo
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void Triangle<T>::gourand_shade(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour)
+	void Triangle<T>::gouraud_shade(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour)
 	{
 		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
 		sort_vertices_by_y();
 
 		if (m_points[1].m_y == m_points[2].m_y)
 		{
-			gourand_shade_flat_bottom(colour_buffer, texture_buffer, display_mode, render_texture, colour);
+			gouraud_shade_flat_bottom(colour_buffer, texture_buffer, display_mode, render_texture, colour);
 		}
 		else if (m_points[0].m_y == m_points[1].m_y)
 		{
-			gourand_shade_flat_top(colour_buffer, texture_buffer, display_mode, render_texture, colour);
+			gouraud_shade_flat_top(colour_buffer, texture_buffer, display_mode, render_texture, colour);
 		}
 		else {
 			vector::Vector2d<int> midpoint{ get_midpoint() };
@@ -487,8 +487,8 @@ namespace geo
 			flat_top_triangle.m_uvs.push_back(m_uvs[1]);
 			flat_top_triangle.m_uvs.push_back(vector::Vector2d<double>(mp_u, mp_v));
 			flat_top_triangle.m_uvs.push_back(m_uvs[2]);
-			flat_bottom_triangle.gourand_shade_flat_bottom(colour_buffer, texture_buffer, display_mode, render_texture, colour);
-			flat_top_triangle.gourand_shade_flat_top(colour_buffer, texture_buffer, display_mode, render_texture, colour);
+			flat_bottom_triangle.gouraud_shade_flat_bottom(colour_buffer, texture_buffer, display_mode, render_texture, colour);
+			flat_top_triangle.gouraud_shade_flat_top(colour_buffer, texture_buffer, display_mode, render_texture, colour);
 		}
 	}
 
@@ -506,7 +506,7 @@ namespace geo
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void Triangle<T>::gourand_shade_flat_bottom(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const
+	void Triangle<T>::gouraud_shade_flat_bottom(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const
 	{
 		double x_start_slope{ get_inverse_slope(1, 0) };
 		double x_end_slope{ get_inverse_slope(2, 0) };
@@ -599,7 +599,7 @@ namespace geo
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void Triangle<T>::gourand_shade_flat_top(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const
+	void Triangle<T>::gouraud_shade_flat_top(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, const bool render_texture, const std::uint32_t colour) const
 	{
 		double x_start_slope{ get_inverse_slope(2, 0) };
 		double x_end_slope{ get_inverse_slope(2, 1) };

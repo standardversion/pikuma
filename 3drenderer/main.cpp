@@ -191,7 +191,7 @@ void render(
 	bool& render_face_center,
 	bool& render_normals,
 	bool render_flat_shaded,
-	bool render_gourand_shaded,
+	bool render_gouraud_shaded,
 	bool render_texture
 )
 {
@@ -205,9 +205,9 @@ void render(
 	{
 		if (render_shaded)
 		{
-			if (render_gourand_shaded)
+			if (render_gouraud_shaded)
 			{
-				triangle.gourand_shade(
+				triangle.gouraud_shade(
 					colour_buffer,
 					texture_buffer,
 					display_mode,
@@ -315,7 +315,7 @@ int main(int argc, char* argv[])
 	bool render_normals{ false };
 	bool backface_culling{ true };
 	bool render_flat_shaded{ true };
-	bool render_gourand_shaded{ false };
+	bool render_gouraud_shaded{ false };
 	bool render_texture{ false };
 	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
 	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
@@ -324,7 +324,7 @@ int main(int argc, char* argv[])
 	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
-		input::process(is_running, render_mode, backface_culling, render_flat_shaded, render_gourand_shaded, render_texture, event);
+		input::process(is_running, render_mode, backface_culling, render_flat_shaded, render_gouraud_shaded, render_texture, event);
 		update(
 			meshes,
 			projection_matrix,
@@ -352,7 +352,7 @@ int main(int argc, char* argv[])
 			render_face_center,
 			render_normals,
 			render_flat_shaded,
-			render_gourand_shaded,
+			render_gouraud_shaded,
 			render_texture
 		);
 	}

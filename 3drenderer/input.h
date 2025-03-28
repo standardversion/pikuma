@@ -8,7 +8,7 @@ namespace input
 		int& render_mode,
 		bool& backface_culling,
 		bool& render_flat_shaded,
-		bool& render_gourand_shaded,
+		bool& render_gouraud_shaded,
 		bool& render_texture,
 		SDL_Event& event
 	);
