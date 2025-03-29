@@ -39,8 +39,8 @@ void update(
 	triangles_to_render = {};
 	for (auto& mesh_to_render : meshes)
 	{
-		//mesh_to_render.m_rotation.m_x += 0.01;
-		mesh_to_render.m_rotation.m_y += 0.01;
+		mesh_to_render.m_rotation.m_x += 0.01;
+		//mesh_to_render.m_rotation.m_y += 0.01;
 		//mesh_to_render.m_rotation.m_z += 0.01;
 		//mesh_to_render.m_scale.m_x = 0.5;
 		//mesh_to_render.m_scale.m_y = 0.5;
@@ -104,8 +104,7 @@ void update(
 				transformed_normal.normalize();
 				counter++;
 			}
-			// get avg depth of each face so we can sort and render by depth
-			projected_triangle.m_avg_depth = (transformed_vertices[0].m_z + transformed_vertices[1].m_z + transformed_vertices[2].m_z) / 3.0;
+
 			std::vector<vector::Vector3d> per_vertex_normals{ mesh_to_render.get_per_vertex_normals(transformed_vertices) };
 			if (backface_culling) {
 				// find the camera ray ie the vector between a point in the triangle and the camera origin
@@ -166,20 +165,13 @@ void update(
 			triangles_to_render.push_back(projected_triangle);
 		}
 	}
-
-
-	
-	std::sort(triangles_to_render.begin(), triangles_to_render.end(), [](const geo::Triangle<int>& a, const geo::Triangle<int>& b)
-		{
-			return a.m_avg_depth > b.m_avg_depth;
-		}
-	);
 }
 
 void render(
 	SDL_Renderer*& renderer,
 	SDL_Texture*& colour_buffer_texture,
 	std::uint32_t*& colour_buffer,
+	double*& z_buffer,
 	const SDL_Surface* surface,
 	const SDL_DisplayMode* display_mode,
 	const std::uint32_t edge_colour,
@@ -208,6 +200,7 @@ void render(
 		{
 			triangle.fill(
 				colour_buffer,
+				z_buffer,
 				surface,
 				display_mode,
 				render_flat_shaded,
@@ -272,6 +265,8 @@ void render(
 	// fill the colour buffer with a colour value
 	display::clear_colour_buffer(colour_buffer, display_mode, bg_colour);
 
+	display::clear_z_buffer(z_buffer, display_mode);
+
 	// Update the screen with any rendering performed since the previous call.
 	SDL_RenderPresent(renderer);
 
@@ -286,6 +281,7 @@ int main(int argc, char* argv[])
 	SDL_DisplayMode display_mode;
 	bool is_running{ display::setup(colour_buffer_texture, window, renderer, &display_mode) };
 	std::uint32_t* colour_buffer{ new std::uint32_t[display_mode.w * display_mode.h]{} };
+	double* z_buffer{ new double[display_mode.w * display_mode.h]{} };
 	constexpr const std::uint32_t bg_colour{ 0x00000000 };
 	constexpr const std::uint32_t edge_colour{ 0xFFFFFFFF };
 	constexpr const std::uint32_t vertex_colour{ 0xFFFFFF00 };
@@ -295,8 +291,8 @@ int main(int argc, char* argv[])
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\f22.obj" };
-	const SDL_Surface* surface{ IMG_Load(".\\assets\\f22.png") };
+	geo::Mesh mesh{ ".\\assets\\f117.obj" };
+	const SDL_Surface* surface{ IMG_Load(".\\assets\\f117.png") };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
@@ -330,6 +326,7 @@ int main(int argc, char* argv[])
 			renderer,
 			colour_buffer_texture,
 			colour_buffer,
+			z_buffer,
 			surface,
 			&display_mode,
 			edge_colour,
@@ -346,6 +343,6 @@ int main(int argc, char* argv[])
 			render_texture
 		);
 	}
-	display::cleanup(window, renderer, colour_buffer);
+	display::cleanup(window, renderer, colour_buffer, z_buffer);
 	return 0;
 }

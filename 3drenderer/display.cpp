@@ -87,7 +87,7 @@ namespace display
 		return std::uint32_t{ a | (r & 0x00FF0000) | (g & 0x0000FF00) | (b & 0x000000FF) };
 	}
 
-	void cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer)
+	void cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, double*& z_buffer)
 	{
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(window);
@@ -97,6 +97,8 @@ namespace display
 		// deallocate the memory
 		delete[] colour_buffer;
 		colour_buffer = nullptr;
+		delete[] z_buffer;
+		z_buffer = nullptr;
 	}
 
 	void clear_colour_buffer(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour)
@@ -112,6 +114,23 @@ namespace display
 			for (int x{ 0 }; x < display_mode->w; x++)
 			{
 				colour_buffer[(display_mode->w * y) + x] = colour;
+			}
+		}
+	}
+
+	void clear_z_buffer(double*& z_buffer, const SDL_DisplayMode* display_mode)
+	{
+		// our 2d pixels (x * y) are laid out in a 1d array
+		// so for example, if we're dealing with 1920x1080 the first 1920 indices for the array
+		// will contain row 1 of the pixels on the screen 1921 to 3840 will contain row 2 ...
+		// so we start with the height ie row one then loop across  with width horizontally to fill that row
+		// with colour values
+		// to access any specific pixel we can get the index using [(width * row) + column]
+		for (int y{ 0 }; y < display_mode->h; y++)
+		{
+			for (int x{ 0 }; x < display_mode->w; x++)
+			{
+				z_buffer[(display_mode->w * y) + x] = 1.0;
 			}
 		}
 	}
