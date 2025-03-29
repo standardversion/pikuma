@@ -14,7 +14,6 @@
 #include "triangle.h"
 #include "utils.h"
 #include "matrix.h"
-#include "redBrickTex.h"
 
 void update(
 	std::vector<geo::Mesh>& meshes,
@@ -292,7 +291,6 @@ int main(int argc, char* argv[])
 	constexpr const std::uint32_t vertex_colour{ 0xFFFFFF00 };
 	constexpr const std::uint32_t fill_colour{ 0x00808080 };
 	const shading::Light directional_light{};
-	const std::uint32_t* texture_buffer{ (uint32_t*)texture::REDBRICK_TEXTURE };
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
