@@ -149,6 +149,11 @@ namespace geo
 			m_per_vtx_lt_intensity[1] = intensity_p2;
 			m_per_vtx_lt_intensity[2] = intensity_p1;
 		}
+
+		// Flip the V component to account for inverted UV-coordinates (V grows downwards)
+		m_uvs[0].m_y = 1.0 - m_uvs[0].m_y;
+		m_uvs[1].m_y = 1.0 - m_uvs[1].m_y;
+		m_uvs[2].m_y = 1.0 - m_uvs[2].m_y;
 	}
 
 	template <typename T>
@@ -372,8 +377,8 @@ namespace geo
 			u /= reciprocal_w;
 			v /= reciprocal_w;
 
-			int tex_x = abs((int)(u * surface->w));
-			int tex_y = abs((int)(v * surface->h));
+			int tex_x = abs((int)(u * surface->w)) % surface->w; // prevents texture buffer overflow
+			int tex_y = abs((int)(v * surface->h)) % surface->h; // prevents texture buffer overflow
 
 			pixel_colour = display::get_pixel_colour(surface, tex_x, tex_y);
 		}

@@ -197,10 +197,10 @@ namespace display
 		The | operator combines these shifted values into a single 32 - bit value.
 
 		The result is returned as the packed 32 - bit color value.*/
-		return (static_cast<std::uint32_t>(colour.r) << 24) |
-			(static_cast<std::uint32_t>(colour.g) << 16) |
-			(static_cast<std::uint32_t>(colour.b) << 8) |
-			static_cast<std::uint32_t>(colour.a);;
+		return (static_cast<std::uint32_t>(colour.a) << 24) |  // Alpha
+			(static_cast<std::uint32_t>(colour.r) << 16) |  // Red
+			(static_cast<std::uint32_t>(colour.g) << 8) |   // Green
+			static_cast<std::uint32_t>(colour.b);
 	}
 
 	bool initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode)

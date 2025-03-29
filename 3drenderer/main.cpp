@@ -39,9 +39,9 @@ void update(
 	triangles_to_render = {};
 	for (auto& mesh_to_render : meshes)
 	{
-		mesh_to_render.m_rotation.m_x += 0.01;
+		//mesh_to_render.m_rotation.m_x += 0.01;
 		mesh_to_render.m_rotation.m_y += 0.01;
-		mesh_to_render.m_rotation.m_z += 0.01;
+		//mesh_to_render.m_rotation.m_z += 0.01;
 		//mesh_to_render.m_scale.m_x = 0.5;
 		//mesh_to_render.m_scale.m_y = 0.5;
 		//mesh_to_render.m_scale.m_z = 0.5;
@@ -295,8 +295,8 @@ int main(int argc, char* argv[])
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\cube.obj" };
-	const SDL_Surface* surface{ IMG_Load(".\\assets\\cube.png") };
+	geo::Mesh mesh{ ".\\assets\\f22.obj" };
+	const SDL_Surface* surface{ IMG_Load(".\\assets\\f22.png") };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
