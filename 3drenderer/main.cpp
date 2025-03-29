@@ -20,7 +20,6 @@ void update(
 	const matrix::Matrix4x4& projection_matrix,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
 	const vector::Vector3d& camera_position,
-	const display::Display& display,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
 	const bool backface_culling,
@@ -40,9 +39,9 @@ void update(
 	triangles_to_render = {};
 	for (auto& mesh_to_render : meshes)
 	{
-		mesh_to_render.m_rotation.m_x += 0.01;
+		//mesh_to_render.m_rotation.m_x += 0.01;
 		mesh_to_render.m_rotation.m_y += 0.01;
-		mesh_to_render.m_rotation.m_z += 0.01;
+		//mesh_to_render.m_rotation.m_z += 0.01;
 		//mesh_to_render.m_scale.m_x = 0.5;
 		//mesh_to_render.m_scale.m_y = 0.5;
 		//mesh_to_render.m_scale.m_z = 0.5;
@@ -66,7 +65,7 @@ void update(
 				mesh_to_render.m_vertices[face.b - 1],
 				mesh_to_render.m_vertices[face.c - 1]
 			};
-
+			// normals
 			std::vector<vector::Vector3d> face_vtx_normals{
 				mesh_to_render.m_vertex_normals[face.a - 1],
 				mesh_to_render.m_vertex_normals[face.b - 1],
@@ -122,19 +121,29 @@ void update(
 			double light_intensity{ abs(per_vertex_normals[0].dot_product(light.m_direction))};
 			projected_triangle.m_light_intensity = light_intensity;
 
+			// uvs don't need to be transformed
+			std::vector<vector::Vector2d<double>> face_vtx_uvs{
+				mesh_to_render.m_uvs[face.a_uv - 1],
+				mesh_to_render.m_uvs[face.b_uv - 1],
+				mesh_to_render.m_uvs[face.c_uv - 1]
+
+			};
 			// project the point
 			counter = 0;
 			for (const auto& vertex : transformed_vertices)
 			{
-				vector::Vector2d<double> projected_point{ display.project_vec4d(display_mode, projection_matrix, vertex) };
+				vector::Vector4d projected_point{ display::project_vec4d(display_mode, projection_matrix, vertex) };
 				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(transformed_normals[counter].dot_product(light.m_direction)));
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
+				projected_triangle.m_points_z.push_back(projected_point.m_z);
+				projected_triangle.m_points_w.push_back(projected_point.m_w);
+				projected_triangle.m_uvs.push_back(face_vtx_uvs[counter]);
 				counter++;
 			}
 			if (render_face_center || render_normals)
 			{
 				vector::Vector3d face_center{ mesh_to_render.get_face_center(transformed_vertices) };
-				vector::Vector2d<double> projected_center_point{ display.project_vec4d(display_mode, projection_matrix, face_center) };
+				vector::Vector4d projected_center_point{ display::project_vec4d(display_mode, projection_matrix, face_center) };
 
 				projected_triangle.m_center.m_x = projected_center_point.m_x;
 				projected_triangle.m_center.m_y = projected_center_point.m_y;
@@ -147,7 +156,7 @@ void update(
 					face_normal.m_z += face_center.m_z;
 					face_normal.normalize();
 			
-					vector::Vector2d<double> projected_face_normal_point{ display.project_vec4d(display_mode, projection_matrix, face_normal) };
+					vector::Vector4d projected_face_normal_point{ display::project_vec4d(display_mode, projection_matrix, face_normal) };
 
 					projected_triangle.m_face_normal.m_x = projected_face_normal_point.m_x;
 					projected_triangle.m_face_normal.m_y = projected_face_normal_point.m_y;
@@ -168,10 +177,10 @@ void update(
 }
 
 void render(
-	const display::Display& display,
 	SDL_Renderer*& renderer,
 	SDL_Texture*& colour_buffer_texture,
 	std::uint32_t*& colour_buffer,
+	const SDL_Surface* surface,
 	const SDL_DisplayMode* display_mode,
 	const std::uint32_t edge_colour,
 	const std::uint32_t bg_colour,
@@ -183,35 +192,36 @@ void render(
 	bool& render_face_center,
 	bool& render_normals,
 	bool render_flat_shaded,
-	bool render_gourand_shaded
+	bool render_gouraud_shaded,
+	bool render_texture
 )
 {
 	bool render_wireframe{ false };
 	bool render_vertex{ false };
 	bool render_shaded{ false };
-	display.activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
+	display::activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
 	//display.draw_grid(colour_buffer, display_mode, edge_colour, bg_colour, grid_on);
 
 	for (auto& triangle : triangles_to_render)
 	{
 		if (render_shaded)
 		{
-			display.fill_triangle(
+			triangle.fill(
 				colour_buffer,
+				surface,
 				display_mode,
 				render_flat_shaded,
-				render_gourand_shaded,
-				triangle,
+				render_gouraud_shaded,
+				render_texture,
 				fill_colour
 			);
 		}
 		
 		if (render_wireframe)
 		{
-			display.draw_triangle(
+			triangle.draw(
 				colour_buffer,
 				display_mode,
-				triangle,
 				edge_colour
 			);
 		}
@@ -220,7 +230,7 @@ void render(
 		{
 			for (const auto& point : triangle.m_points)
 			{
-				display.draw_rect(
+				display::draw_rect(
 					colour_buffer,
 					display_mode,
 					point.m_x,
@@ -233,7 +243,7 @@ void render(
 		}
 		if (render_face_center)
 		{
-			display.draw_rect(
+			display::draw_rect(
 				colour_buffer,
 				display_mode,
 				triangle.m_center.m_x,
@@ -245,7 +255,7 @@ void render(
 		}
 		if (render_normals)
 		{
-			display.draw_line(
+			display::draw_line(
 				colour_buffer,
 				display_mode,
 				triangle.m_center.m_x,
@@ -258,9 +268,9 @@ void render(
 	}
 
 	// render the colour buffer
-	display.render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer);
+	display::render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer);
 	// fill the colour buffer with a colour value
-	display.clear_colour_buffer(colour_buffer, display_mode, bg_colour);
+	display::clear_colour_buffer(colour_buffer, display_mode, bg_colour);
 
 	// Update the screen with any rendering performed since the previous call.
 	SDL_RenderPresent(renderer);
@@ -274,21 +284,19 @@ int main(int argc, char* argv[])
 	SDL_Renderer* renderer{ nullptr };
 	SDL_Texture* colour_buffer_texture{ nullptr };
 	SDL_DisplayMode display_mode;
-	display::Display display{};
-	const input::Input input{};
-	bool is_running{ display.setup(colour_buffer_texture, window, renderer, &display_mode) };
+	bool is_running{ display::setup(colour_buffer_texture, window, renderer, &display_mode) };
 	std::uint32_t* colour_buffer{ new std::uint32_t[display_mode.w * display_mode.h]{} };
 	constexpr const std::uint32_t bg_colour{ 0x00000000 };
 	constexpr const std::uint32_t edge_colour{ 0xFFFFFFFF };
 	constexpr const std::uint32_t vertex_colour{ 0xFFFFFF00 };
 	constexpr const std::uint32_t fill_colour{ 0x00808080 };
 	const shading::Light directional_light{};
-
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\teapot.obj" };
+	geo::Mesh mesh{ ".\\assets\\f22.obj" };
+	const SDL_Surface* surface{ IMG_Load(".\\assets\\f22.png") };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
@@ -297,7 +305,8 @@ int main(int argc, char* argv[])
 	bool render_normals{ false };
 	bool backface_culling{ true };
 	bool render_flat_shaded{ true };
-	bool render_gourand_shaded{ false };
+	bool render_gouraud_shaded{ false };
+	bool render_texture{ false };
 	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
 	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
 	const double znear{ 0.1 };
@@ -305,13 +314,12 @@ int main(int argc, char* argv[])
 	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
-		input.process(is_running, render_mode, backface_culling, render_flat_shaded, render_gourand_shaded, event);
+		input::process(is_running, render_mode, backface_culling, render_flat_shaded, render_gouraud_shaded, render_texture, event);
 		update(
 			meshes,
 			projection_matrix,
 			triangles_to_render,
 			camera_postion,
-			display,
 			&display_mode,
 			previous_frame_time,
 			backface_culling,
@@ -319,10 +327,10 @@ int main(int argc, char* argv[])
 			render_face_center,
 			render_normals);
 		render(
-			display,
 			renderer,
 			colour_buffer_texture,
 			colour_buffer,
+			surface,
 			&display_mode,
 			edge_colour,
 			bg_colour,
@@ -334,9 +342,10 @@ int main(int argc, char* argv[])
 			render_face_center,
 			render_normals,
 			render_flat_shaded,
-			render_gourand_shaded
+			render_gouraud_shaded,
+			render_texture
 		);
 	}
-	display.cleanup(window, renderer, colour_buffer);
+	display::cleanup(window, renderer, colour_buffer);
 	return 0;
 }

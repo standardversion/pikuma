@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "vector2d.h"
 #include "vector3d.h"
 #include "vector4d.h"
 #include "triangle.h"
@@ -18,6 +19,7 @@ namespace geo
 
 		std::vector<vector::Vector3d> m_vertices{};
 		std::vector<vector::Vector3d> m_vertex_normals{};
+		std::vector<vector::Vector2d<double>> m_uvs{};
 		std::vector<geo::face_t> m_faces{};
 		vector::Vector3d m_rotation{ 0.0, 0.0, 0.0 };
 		vector::Vector3d m_scale{ 1.0, 1.0, 1.0 };

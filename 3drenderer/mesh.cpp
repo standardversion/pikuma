@@ -47,6 +47,11 @@ namespace geo
 						// vertex normal line in obj vn -0.0000 1.0000 - 0.0000
 						obj_normals.emplace_back(std::stod(parts[1]), std::stod(parts[2]), std::stod(parts[3]));
 					}
+					if (parts[0] == "vt")
+					{
+						// vertex uv line in obj vt 0.875000 0.500000
+						m_uvs.emplace_back(std::stod(parts[1]), std::stod(parts[2]));
+					}
 					else if (parts[0] == "f")
 					{
 						// face line in obj: f 5/1/1 3/2/1 1/3/1, 5, 3, 1 are the vertex indices
@@ -57,6 +62,9 @@ namespace geo
 							std::stoi(face_parts1[0]),
 							std::stoi(face_parts2[0]),
 							std::stoi(face_parts3[0]),
+							std::stoi(face_parts1[1]),
+							std::stoi(face_parts2[1]),
+							std::stoi(face_parts3[1]),
 							std::stoi(face_parts1[2]),
 							std::stoi(face_parts2[2]),
 							std::stoi(face_parts3[2])

@@ -18,6 +18,7 @@ namespace vector
 		Vector2d<T>& operator/=(double factor);;
 		void normalize();;
 		double dot_product(const Vector2d<T>& v) const;
+		double cross_product(const Vector2d<T>& v) const;
 		void rotate(const double angle);
 
 		T m_x{ };
@@ -105,6 +106,13 @@ namespace vector
 	double Vector2d<T>::dot_product(const Vector2d<T>& v) const
 	{
 		return (m_x * v.m_x) + (m_y * v.m_y);
+	}
+
+	// This is a hack, 2d vectors don't have a cross product
+	template <typename T>
+	double Vector2d<T>::cross_product(const Vector2d<T>& v) const
+	{
+		return  m_x * v.m_y - m_y * v.m_x;
 	}
 
 	template <typename T>

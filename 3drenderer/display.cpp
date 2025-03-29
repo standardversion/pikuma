@@ -3,7 +3,7 @@
 
 namespace display
 {
-	void Display::activate_render_mode(const int render_mode, bool& render_wireframe, bool& render_vertex, bool& render_shaded, bool& render_face_center, bool& render_normals) const
+	void activate_render_mode(const int render_mode, bool& render_wireframe, bool& render_vertex, bool& render_shaded, bool& render_face_center, bool& render_normals)
 	{
 		switch (render_mode)
 		{
@@ -75,7 +75,7 @@ namespace display
 		}
 	}
 
-	std::uint32_t Display::apply_light_intensity(const std::uint32_t colour, double percentage_factor) const
+	std::uint32_t apply_light_intensity(const std::uint32_t colour, double percentage_factor)
 	{
 		if (percentage_factor < 0) percentage_factor = 0;
 		if (percentage_factor > 1) percentage_factor = 1;
@@ -87,7 +87,7 @@ namespace display
 		return std::uint32_t{ a | (r & 0x00FF0000) | (g & 0x0000FF00) | (b & 0x000000FF) };
 	}
 
-	void Display::cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer) const
+	void cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer)
 	{
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(window);
@@ -99,7 +99,7 @@ namespace display
 		colour_buffer = nullptr;
 	}
 
-	void Display::clear_colour_buffer(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const
+	void clear_colour_buffer(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour)
 	{
 		// our 2d pixels (x * y) are laid out in a 1d array
 		// so for example, if we're dealing with 1920x1080 the first 1920 indices for the array
@@ -116,7 +116,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_grid(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on) const
+	void draw_grid(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on)
 	{
 		for (int y{ 0 }; y < display_mode->h; y++)
 		{
@@ -130,7 +130,8 @@ namespace display
 		}
 	}
 
-	void Display::draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour) const
+	// draw line for flat shading
+	void draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour)
 	{
 		int delta_x{ x1 - x0 };
 		int delta_y{ y1 - y0 };
@@ -150,42 +151,7 @@ namespace display
 		}
 	}
 
-	void Display::draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const std::uint32_t colour) const
-	{
-		int delta_x{ x1 - x0 };
-		int delta_y{ y1 - y0 };
-
-		int side_length = abs(delta_x) >= abs(delta_y) ? abs(delta_x) : abs(delta_y);
-		// Find out how much we should increment in x and y in each iteration
-		double x_increment = delta_x / static_cast<double>(side_length);
-		double y_increment = delta_y / static_cast<double>(side_length);
-
-		double current_x{ static_cast<double>(x0) };
-		double current_y{ static_cast<double>(y0) };
-		double scalar_factor{ 0 };
-		double light_intensity{ start_i };
-		// for gourand shading, interpolate the intensity at each pixel based on 
-		// the intensity at the start and the end
-		for (int i{ 0 }; i <= side_length; i++)
-		{
-			if (i == side_length) {
-				light_intensity = end_i;
-			} else if (i == 0) { 
-				light_intensity = start_i;
-			}
-			else {
-				light_intensity = start_i + (end_i - start_i) * scalar_factor;
-			}
-
-			std::uint32_t pixel_colour{ apply_light_intensity(colour, light_intensity) };
-			draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), pixel_colour);
-			current_x += x_increment;
-			current_y += y_increment;
-			scalar_factor = vector::Vector2d<int>::get_scalar_factor({ x0, y0 }, { static_cast<int>(current_x), static_cast<int>(current_y) }, { x1, y1 });
-		}
-	}
-
-	void Display::draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour) const
+	void draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour)
 	{
 		if (x >= 0 && x < display_mode->w && y>= 0 &&  y < display_mode->h)
 		{
@@ -194,7 +160,7 @@ namespace display
 		
 	}
 
-	void Display::draw_rect(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, const std::uint32_t colour) const
+	void draw_rect(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, const std::uint32_t colour)
 	{
 		for (int i{ 0 }; i < width; i++)
 		{
@@ -205,227 +171,39 @@ namespace display
 		}
 	}
 
-	void Display::draw_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
+	std::uint32_t get_pixel_colour(const SDL_Surface* surface, const int x, const int y)
 	{
-		draw_line(
-			colour_buffer,
-			display_mode,
-			triangle.m_points[0].m_x,
-			triangle.m_points[0].m_y,
-			triangle.m_points[1].m_x,
-			triangle.m_points[1].m_y,
-			colour
-		);
-		draw_line(
-			colour_buffer,
-			display_mode,
-			triangle.m_points[0].m_x,
-			triangle.m_points[0].m_y,
-			triangle.m_points[2].m_x,
-			triangle.m_points[2].m_y,
-			colour
-		);
-		draw_line(
-			colour_buffer,
-			display_mode,
-			triangle.m_points[1].m_x,
-			triangle.m_points[1].m_y,
-			triangle.m_points[2].m_x,
-			triangle.m_points[2].m_y,
-			colour
-		);
+		/*surface->pixels is a pointer to the raw pixel data of the SDL surface.
+
+		surface->pitch is the number of bytes in a row of pixels(which can be larger than the width of the surface, due to padding).
+
+		surface->format->BytesPerPixel is the number of bytes per pixel(typically 3 for 24 - bit images, 4 for 32 - bit images, etc.).
+
+		x* surface->format->BytesPerPixel moves the pointer x pixels to the right.
+
+		y* surface->pitch moves the pointer y rows down.
+
+		The resulting pointer, pixel, points to the start of the pixel at the(x, y) coordinates in the surface's memory.*/
+
+		std::uint8_t* pixel{ (std::uint8_t*)surface->pixels + y * surface->pitch + x * surface->format->BytesPerPixel };
+		std::uint32_t pixel_data = *(std::uint32_t*)pixel; //typecast and dereference
+		SDL_Color colour{ 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE };
+		SDL_GetRGB(pixel_data, surface->format, &colour.r, &colour.g, &colour.b);
+
+		/*The individual color components(r, g, b, and a) are packed into a 32 - bit integer, following the 0xAARRGGBB format.
+
+		colour.r is shifted to the highest 8 bits(left - shift by 24), colour.g is shifted by 16, colour.b is shifted by 8, and colour.a stays in the lowest 8 bits.
+
+		The | operator combines these shifted values into a single 32 - bit value.
+
+		The result is returned as the packed 32 - bit color value.*/
+		return (static_cast<std::uint32_t>(colour.a) << 24) |  // Alpha
+			(static_cast<std::uint32_t>(colour.r) << 16) |  // Red
+			(static_cast<std::uint32_t>(colour.g) << 8) |   // Green
+			static_cast<std::uint32_t>(colour.b);
 	}
 
-	///////////////////////////////////////////////////////////////////////////////
-	// Draw a filled triangle with the flat-top/flat-bottom method
-	// We split the original triangle in two, half flat-bottom and half flat-top
-	///////////////////////////////////////////////////////////////////////////////
-	//
-	//          (x0,y0)
-	//            / \
-	//           /   \
-	//          /     \
-	//         /       \
-	//        /         \
-	//   (x1,y1)------(Mx,My)
-	//       \_           \
-	//          \_         \
-	//             \_       \
-	//                \_     \
-	//                   \    \
-	//                     \_  \
-	//                        \_\
-	//                           \
-	//                         (x2,y2)
-	//
-	///////////////////////////////////////////////////////////////////////////////
-	void Display::fill_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, geo::Triangle<int>& triangle, const std::uint32_t colour) const
-	{
-		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
-		triangle.sort_vertices_by_y();
-
-		if (triangle.m_points[1].m_y == triangle.m_points[2].m_y)
-		{
-			fill_flat_bottom_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, triangle, colour);
-		}
-		else if (triangle.m_points[0].m_y == triangle.m_points[1].m_y)
-		{
-			fill_flat_top_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, triangle, colour);
-		}
-		else {
-			vector::Vector2d<int> midpoint{ triangle.get_midpoint() };
-			double scalar_factor{ vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], midpoint, triangle.m_points[2]) };
-			double mp_intensity{ triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor };
-			geo::Triangle<int> flat_bottom_triangle{ triangle.m_points[0], triangle.m_points[1], midpoint };
-			flat_bottom_triangle.m_light_intensity = triangle.m_light_intensity;
-			flat_bottom_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[0]);
-			flat_bottom_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[1]);
-			flat_bottom_triangle.m_per_vtx_lt_intensity.push_back(mp_intensity);
-			geo::Triangle<int> flat_top_triangle{ triangle.m_points[1], midpoint, triangle.m_points[2] };
-			flat_top_triangle.m_light_intensity = triangle.m_light_intensity;
-			flat_top_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[1]);
-			flat_top_triangle.m_per_vtx_lt_intensity.push_back(mp_intensity);
-			flat_top_triangle.m_per_vtx_lt_intensity.push_back(triangle.m_per_vtx_lt_intensity[2]);
-			fill_flat_bottom_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, flat_bottom_triangle, colour);
-			fill_flat_top_triangle(colour_buffer, display_mode, render_flat_shaded, render_gourand_shaded, flat_top_triangle, colour);
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////
-	// Draw a filled a triangle with a flat bottom
-	///////////////////////////////////////////////////////////////////////////////
-	//
-	//        (x0,y0) a
-	//          / \
-	//         /   \
-	//        /     \
-	//       /       \
-	//      /         \
-	// b (x1,y1)------(x2,y2) c
-	//
-	///////////////////////////////////////////////////////////////////////////////
-	void Display::fill_flat_bottom_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
-	{
-		double x_start_slope{ triangle.get_inverse_slope(1, 0) };
-		double x_end_slope{ triangle.get_inverse_slope(2, 0) };
-		double x_start{ static_cast<double>(triangle.m_points[0].m_x) };
-		double x_end{ static_cast<double>(triangle.m_points[0].m_x) };
-		double start_intensity{ triangle.m_per_vtx_lt_intensity[0] };
-		double end_intensity{ triangle.m_per_vtx_lt_intensity[0] };
-		double scalar_factor_ab{ 0 };
-		double scalar_factor_ac{ 0 };
-		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
-		for (int i{ triangle.m_points[0].m_y }; i <= triangle.m_points[1].m_y; i++)
-		{
-			if (render_gourand_shaded)
-			{
-				draw_line(
-					colour_buffer,
-					display_mode,
-					x_start,
-					i,
-					x_end,
-					i,
-					start_intensity,
-					end_intensity,
-					colour
-				);
-			}
-			if (render_flat_shaded)
-			{
-				draw_line(
-					colour_buffer,
-					display_mode,
-					x_start,
-					i,
-					x_end,
-					i,
-					light_colour
-				);
-			}
-			x_start += x_start_slope;
-			x_end += x_end_slope;
-			/*
-			For two values A and B, and a scalar factor λ, the interpolated value I is given by:
-
-							I=A+λ⋅(B−A)
-			Interpolate the intensity at each start and end pixels
-			*/
-			scalar_factor_ab = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[1]);
-			start_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[1] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ab;
-			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_end), static_cast<int>(i) }, triangle.m_points[2]);
-			end_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ab;
-		}
-	}
-
-	///////////////////////////////////////////////////////////////////////////////
-	// Draw a filled a triangle with a flat top
-	///////////////////////////////////////////////////////////////////////////////
-	//
-	// a (x0,y0)------(x1,y1) b
-	//      \         /
-	//       \       /
-	//        \     /
-	//         \   /
-	//          \ /
-	//        (x2,y2) c
-	//
-	///////////////////////////////////////////////////////////////////////////////
-	void Display::fill_flat_top_triangle(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gourand_shaded, const geo::Triangle<int>& triangle, const std::uint32_t colour) const
-	{
-		double x_start_slope{ triangle.get_inverse_slope(2, 0) };
-		double x_end_slope{ triangle.get_inverse_slope(2, 1) };
-		double x_start{ static_cast<double>(triangle.m_points[2].m_x) };
-		double x_end{ static_cast<double>(triangle.m_points[2].m_x) };
-		double start_intensity{ triangle.m_per_vtx_lt_intensity[2] };
-		double end_intensity{ triangle.m_per_vtx_lt_intensity[2] };
-		double scalar_factor_ac{ 0 };
-		double scalar_factor_bc{ 0 };
-		const std::uint32_t light_colour{ apply_light_intensity(colour, triangle.m_light_intensity) };
-		for (int i{ triangle.m_points[2].m_y }; i >= triangle.m_points[0].m_y; i--)
-		{
-			if (render_gourand_shaded)
-			{
-				draw_line(
-					colour_buffer,
-					display_mode,
-					x_start,
-					i,
-					x_end,
-					i,
-					start_intensity,
-					end_intensity,
-					colour
-				);
-			}
-			if (render_flat_shaded)
-			{
-				draw_line(
-					colour_buffer,
-					display_mode,
-					x_start,
-					i,
-					x_end,
-					i,
-					light_colour
-				);
-			}
-			x_start -= x_start_slope;
-			x_end -= x_end_slope;
-			/*
-			For two values A and B, and a scalar factor λ, the interpolated value I is given by:
-
-							I=A+λ⋅(B−A)
-			Interpolate the intensity at each start and end pixels
-			*/
-			scalar_factor_ac = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[0], { static_cast<int>(x_start), static_cast<int>(i) }, triangle.m_points[2]);
-			start_intensity = triangle.m_per_vtx_lt_intensity[0] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[0]) * scalar_factor_ac;
-			scalar_factor_bc = vector::Vector2d<int>::get_scalar_factor(triangle.m_points[1], { static_cast<int>(x_end), static_cast<int>(i) }, triangle.m_points[2]);
-			end_intensity = triangle.m_per_vtx_lt_intensity[1] + (triangle.m_per_vtx_lt_intensity[2] - triangle.m_per_vtx_lt_intensity[1]) * scalar_factor_bc;
-		}
-	}
-
-	bool Display::initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode) const
+	bool initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode)
 	{
 		// Initialize the SDL library
 		// SDL_INIT_EVERYTHING flag initializes audio, video, controller etc subsystems
@@ -469,11 +247,12 @@ namespace display
 		return true;
 	}
 
-	vector::Vector2d<double> Display::project_vec4d(const SDL_DisplayMode* display_mode, const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d) const
+	vector::Vector4d project_vec4d(const SDL_DisplayMode* display_mode, const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d)
 	{
 		// apply project matrix
-		vector::Vector4d projected_vertex{ projection_matrix.project(vec4d) };
-		vector::Vector2d<double> projected_point{ projected_vertex.m_x, projected_vertex.m_y };
+		//vector::Vector4d projected_vertex{ projection_matrix.project(vec4d) };
+		//vector::Vector4d projected_point{ projected_vertex.m_x, projected_vertex.m_y, vec4d.m_z, vec4d.m_w };
+		vector::Vector4d projected_point{ projection_matrix.project(vec4d) };
 
 		//scale first
 		projected_point.m_x *= display_mode->w / 2;
@@ -487,7 +266,7 @@ namespace display
 		return projected_point;
 	}
 
-	void Display::render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer) const
+	void render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer)
 	{
 		// update the texture with the contents of the colour buffer
 		SDL_UpdateTexture(
@@ -500,7 +279,7 @@ namespace display
 		SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
 	}
 
-	bool Display::setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode) const
+	bool setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode)
 	{
 		// first create the window and rendering context
 		bool initialized = initialize_window(window, renderer, displaymode);
