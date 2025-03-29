@@ -133,16 +133,18 @@ void update(
 			counter = 0;
 			for (const auto& vertex : transformed_vertices)
 			{
-				vector::Vector2d<double> projected_point{ display::project_vec4d(display_mode, projection_matrix, vertex) };
+				vector::Vector4d projected_point{ display::project_vec4d(display_mode, projection_matrix, vertex) };
 				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(transformed_normals[counter].dot_product(light.m_direction)));
 				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
+				projected_triangle.m_points_z.push_back(projected_point.m_z);
+				projected_triangle.m_points_w.push_back(projected_point.m_w);
 				projected_triangle.m_uvs.push_back(face_vtx_uvs[counter]);
 				counter++;
 			}
 			if (render_face_center || render_normals)
 			{
 				vector::Vector3d face_center{ mesh_to_render.get_face_center(transformed_vertices) };
-				vector::Vector2d<double> projected_center_point{ display::project_vec4d(display_mode, projection_matrix, face_center) };
+				vector::Vector4d projected_center_point{ display::project_vec4d(display_mode, projection_matrix, face_center) };
 
 				projected_triangle.m_center.m_x = projected_center_point.m_x;
 				projected_triangle.m_center.m_y = projected_center_point.m_y;
@@ -155,7 +157,7 @@ void update(
 					face_normal.m_z += face_center.m_z;
 					face_normal.normalize();
 			
-					vector::Vector2d<double> projected_face_normal_point{ display::project_vec4d(display_mode, projection_matrix, face_normal) };
+					vector::Vector4d projected_face_normal_point{ display::project_vec4d(display_mode, projection_matrix, face_normal) };
 
 					projected_triangle.m_face_normal.m_x = projected_face_normal_point.m_x;
 					projected_triangle.m_face_normal.m_y = projected_face_normal_point.m_y;
@@ -207,7 +209,7 @@ void render(
 		{
 			if (render_gouraud_shaded)
 			{
-				triangle.gouraud_shade(
+				triangle.gouraud_shade2(
 					colour_buffer,
 					texture_buffer,
 					display_mode,
@@ -217,7 +219,7 @@ void render(
 			}
 			if (render_flat_shaded)
 			{
-				triangle.flat_shade(
+				triangle.flat_shade2(
 					colour_buffer,
 					texture_buffer,
 					display_mode,

@@ -349,11 +349,12 @@ namespace display
 		return true;
 	}
 
-	vector::Vector2d<double> project_vec4d(const SDL_DisplayMode* display_mode, const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d)
+	vector::Vector4d project_vec4d(const SDL_DisplayMode* display_mode, const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d)
 	{
 		// apply project matrix
-		vector::Vector4d projected_vertex{ projection_matrix.project(vec4d) };
-		vector::Vector2d<double> projected_point{ projected_vertex.m_x, projected_vertex.m_y };
+		//vector::Vector4d projected_vertex{ projection_matrix.project(vec4d) };
+		//vector::Vector4d projected_point{ projected_vertex.m_x, projected_vertex.m_y, vec4d.m_z, vec4d.m_w };
+		vector::Vector4d projected_point{ projection_matrix.project(vec4d) };
 
 		//scale first
 		projected_point.m_x *= display_mode->w / 2;
