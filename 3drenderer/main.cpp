@@ -181,7 +181,7 @@ void render(
 	SDL_Renderer*& renderer,
 	SDL_Texture*& colour_buffer_texture,
 	std::uint32_t*& colour_buffer,
-	const std::uint32_t*& texture_buffer,
+	const SDL_Surface* surface,
 	const SDL_DisplayMode* display_mode,
 	const std::uint32_t edge_colour,
 	const std::uint32_t bg_colour,
@@ -209,7 +209,7 @@ void render(
 		{
 			triangle.fill(
 				colour_buffer,
-				texture_buffer,
+				surface,
 				display_mode,
 				render_flat_shaded,
 				render_gouraud_shaded,
@@ -298,6 +298,7 @@ int main(int argc, char* argv[])
 	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
 	int previous_frame_time{ 0 };
 	geo::Mesh mesh{ ".\\assets\\cube.obj" };
+	const SDL_Surface* surface{ IMG_Load(".\\assets\\cube.png") };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
@@ -331,7 +332,7 @@ int main(int argc, char* argv[])
 			renderer,
 			colour_buffer_texture,
 			colour_buffer,
-			texture_buffer,
+			surface,
 			&display_mode,
 			edge_colour,
 			bg_colour,

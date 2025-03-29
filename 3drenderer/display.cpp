@@ -151,140 +151,6 @@ namespace display
 		}
 	}
 
-	// draw line for texture with flat shaing
-	void draw_line(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const vector::Vector2d<double>& start_uv, const vector::Vector2d<double>& end_uv, double light_intensity)
-	{
-		int delta_x{ x1 - x0 };
-		int delta_y{ y1 - y0 };
-
-		int side_length = abs(delta_x) >= abs(delta_y) ? abs(delta_x) : abs(delta_y);
-		// Find out how much we should increment in x and y in each iteration
-		double x_increment = delta_x / static_cast<double>(side_length);
-		double y_increment = delta_y / static_cast<double>(side_length);
-
-		double current_x{ static_cast<double>(x0) };
-		double current_y{ static_cast<double>(y0) };
-		double scalar_factor{ 0 };
-		double u{ start_uv.m_x };
-		double v{ start_uv.m_y };
-		for (int i{ 0 }; i <= side_length; i++)
-		{
-			if (i == side_length) {
-				u = end_uv.m_x;
-				v = end_uv.m_y;
-			}
-			else if (i == 0) {
-				u = start_uv.m_x;
-				v = start_uv.m_y;
-			}
-			else {
-				u = start_uv.m_x + (end_uv.m_x - start_uv.m_x) * scalar_factor;
-				v = start_uv.m_y + (end_uv.m_y - start_uv.m_y) * scalar_factor;
-			}
-			int tex_x = abs((int)(u * 64));
-			int tex_y = abs((int)(v * 64));
-			int index{ (64 * tex_y) + tex_x };
-			std::size_t leng{ sizeof(texture_buffer) };
-			if (index >= 0 && index < 16384)
-			{
-				std::uint32_t texture_colour{ texture_buffer[index] };
-				std::uint32_t pixel_colour{ apply_light_intensity(texture_colour, light_intensity) };
-				draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), pixel_colour);
-			}
-			current_x += x_increment;
-			current_y += y_increment;
-			scalar_factor = vector::Vector2d<int>::get_scalar_factor({ x0, y0 }, { static_cast<int>(current_x), static_cast<int>(current_y) }, { x1, y1 });
-		}
-	}
-
-	// draw line for gouraud shading
-	void draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const std::uint32_t colour)
-	{
-		int delta_x{ x1 - x0 };
-		int delta_y{ y1 - y0 };
-
-		int side_length = abs(delta_x) >= abs(delta_y) ? abs(delta_x) : abs(delta_y);
-		// Find out how much we should increment in x and y in each iteration
-		double x_increment = delta_x / static_cast<double>(side_length);
-		double y_increment = delta_y / static_cast<double>(side_length);
-
-		double current_x{ static_cast<double>(x0) };
-		double current_y{ static_cast<double>(y0) };
-		double scalar_factor{ 0 };
-		double light_intensity{ start_i };
-		// for gouraud shading, interpolate the intensity at each pixel based on 
-		// the intensity at the start and the end
-		for (int i{ 0 }; i <= side_length; i++)
-		{
-			if (i == side_length) {
-				light_intensity = end_i;
-			} else if (i == 0) { 
-				light_intensity = start_i;
-			}
-			else {
-				light_intensity = start_i + (end_i - start_i) * scalar_factor;
-			}
-
-			std::uint32_t pixel_colour{ apply_light_intensity(colour, light_intensity) };
-			draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), pixel_colour);
-			current_x += x_increment;
-			current_y += y_increment;
-			scalar_factor = vector::Vector2d<int>::get_scalar_factor({ x0, y0 }, { static_cast<int>(current_x), static_cast<int>(current_y) }, { x1, y1 });
-		}
-	}
-
-	// draw line for texture with gouraud shading
-	void draw_line(std::uint32_t*& colour_buffer, const std::uint32_t*& texture_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, double start_i, double end_i, const vector::Vector2d<double>& start_uv, const vector::Vector2d<double>& end_uv)
-	{
-		int delta_x{ x1 - x0 };
-		int delta_y{ y1 - y0 };
-
-		int side_length = abs(delta_x) >= abs(delta_y) ? abs(delta_x) : abs(delta_y);
-		// Find out how much we should increment in x and y in each iteration
-		double x_increment = delta_x / static_cast<double>(side_length);
-		double y_increment = delta_y / static_cast<double>(side_length);
-
-		double current_x{ static_cast<double>(x0) };
-		double current_y{ static_cast<double>(y0) };
-		double scalar_factor{ 0 };
-		double light_intensity{ start_i };
-		double u{ start_uv.m_x };
-		double v{ start_uv.m_y };
-		// for gouraud shading, interpolate the intensity at each pixel based on 
-		// the intensity at the start and the end
-		for (int i{ 0 }; i <= side_length; i++)
-		{
-			if (i == side_length) {
-				light_intensity = end_i;
-				u = end_uv.m_x;
-				v = end_uv.m_y;
-			}
-			else if (i == 0) {
-				light_intensity = start_i;
-				u = start_uv.m_x;
-				v = start_uv.m_y;
-			}
-			else {
-				light_intensity = start_i + (end_i - start_i) * scalar_factor;
-				u = start_uv.m_x + (end_uv.m_x - start_uv.m_x) * scalar_factor;
-				v = start_uv.m_y + (end_uv.m_y - start_uv.m_y) * scalar_factor;
-			}
-			int tex_x = abs((int)(u * 64));
-			int tex_y = abs((int)(v * 64));
-			int index{ (64 * tex_y) + tex_x };
-			std::size_t leng{ sizeof(texture_buffer) };
-			if (index >= 0 && index < 16384)
-			{
-				std::uint32_t texture_colour{ texture_buffer[index] };
-				std::uint32_t pixel_colour{ apply_light_intensity(texture_colour, light_intensity) };
-				draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), pixel_colour);
-			}
-			current_x += x_increment;
-			current_y += y_increment;
-			scalar_factor = vector::Vector2d<int>::get_scalar_factor({ x0, y0 }, { static_cast<int>(current_x), static_cast<int>(current_y) }, { x1, y1 });
-		}
-	}
-
 	void draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour)
 	{
 		if (x >= 0 && x < display_mode->w && y>= 0 &&  y < display_mode->h)
@@ -303,6 +169,38 @@ namespace display
 				draw_pixel(colour_buffer, display_mode, start_x + i, start_y + j, colour);
 			}
 		}
+	}
+
+	std::uint32_t get_pixel_colour(const SDL_Surface* surface, const int x, const int y)
+	{
+		/*surface->pixels is a pointer to the raw pixel data of the SDL surface.
+
+		surface->pitch is the number of bytes in a row of pixels(which can be larger than the width of the surface, due to padding).
+
+		surface->format->BytesPerPixel is the number of bytes per pixel(typically 3 for 24 - bit images, 4 for 32 - bit images, etc.).
+
+		x* surface->format->BytesPerPixel moves the pointer x pixels to the right.
+
+		y* surface->pitch moves the pointer y rows down.
+
+		The resulting pointer, pixel, points to the start of the pixel at the(x, y) coordinates in the surface's memory.*/
+
+		std::uint8_t* pixel{ (std::uint8_t*)surface->pixels + y * surface->pitch + x * surface->format->BytesPerPixel };
+		std::uint32_t pixel_data = *(std::uint32_t*)pixel; //typecast and dereference
+		SDL_Color colour{ 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE };
+		SDL_GetRGB(pixel_data, surface->format, &colour.r, &colour.g, &colour.b);
+
+		/*The individual color components(r, g, b, and a) are packed into a 32 - bit integer, following the 0xAARRGGBB format.
+
+		colour.r is shifted to the highest 8 bits(left - shift by 24), colour.g is shifted by 16, colour.b is shifted by 8, and colour.a stays in the lowest 8 bits.
+
+		The | operator combines these shifted values into a single 32 - bit value.
+
+		The result is returned as the packed 32 - bit color value.*/
+		return (static_cast<std::uint32_t>(colour.r) << 24) |
+			(static_cast<std::uint32_t>(colour.g) << 16) |
+			(static_cast<std::uint32_t>(colour.b) << 8) |
+			static_cast<std::uint32_t>(colour.a);;
 	}
 
 	bool initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode)
