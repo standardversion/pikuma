@@ -207,26 +207,15 @@ void render(
 	{
 		if (render_shaded)
 		{
-			if (render_gouraud_shaded)
-			{
-				triangle.gouraud_shade2(
-					colour_buffer,
-					texture_buffer,
-					display_mode,
-					render_texture,
-					fill_colour
-				);
-			}
-			if (render_flat_shaded)
-			{
-				triangle.flat_shade2(
-					colour_buffer,
-					texture_buffer,
-					display_mode,
-					render_texture,
-					fill_colour
-				);
-			}
+			triangle.fill(
+				colour_buffer,
+				texture_buffer,
+				display_mode,
+				render_flat_shaded,
+				render_gouraud_shaded,
+				render_texture,
+				fill_colour
+			);
 		}
 		
 		if (render_wireframe)
