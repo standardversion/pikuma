@@ -35,6 +35,9 @@ void update(
 		SDL_Delay(time_to_wait);
 	}
 
+	// get a delta time factor converted to seconds to be used to update our objs
+	double delta_time{ (SDL_GetTicks() - previous_frame_time) / 1000.0 };
+
 	previous_frame_time = SDL_GetTicks();
 
 	triangles_to_render = {};
@@ -43,9 +46,9 @@ void update(
 	vector::Vector3d up{ 0.0, 1.0, 0.0 };
 	for (auto& mesh_to_render : meshes)
 	{
-		//mesh_to_render.m_rotation.m_x += 0.01;
-		//mesh_to_render.m_rotation.m_y += 0.01;
-		//mesh_to_render.m_rotation.m_z += 0.01;
+		mesh_to_render.m_rotation.m_x += 0.2 * delta_time;
+		mesh_to_render.m_rotation.m_y += 0.2 * delta_time;
+		mesh_to_render.m_rotation.m_z += 0.2 * delta_time;
 		//mesh_to_render.m_scale.m_x = 0.5;
 		//mesh_to_render.m_scale.m_y = 0.5;
 		//mesh_to_render.m_scale.m_z = 0.5;
@@ -53,8 +56,8 @@ void update(
 		// move pionts away from camera
 		mesh_to_render.m_translation.m_z = 5.0;
 
-		view_camera.m_position.m_x += 0.008;
-		view_camera.m_position.m_y += 0.008;
+		//view_camera.m_position.m_x += 0.5 * delta_time;
+		//view_camera.m_position.m_y += 0.5 * delta_time;
 
 		matrix::Matrix4x4 scale_matrix{ matrix::Matrix4x4::make_scale_matrix(mesh_to_render.m_scale.m_x, mesh_to_render.m_scale.m_y, mesh_to_render.m_scale.m_z) };
 		matrix::Matrix4x4 translation_matrix{ matrix::Matrix4x4::make_translation_matrix(mesh_to_render.m_translation.m_x, mesh_to_render.m_translation.m_y, mesh_to_render.m_translation.m_z) };
