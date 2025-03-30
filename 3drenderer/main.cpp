@@ -14,12 +14,13 @@
 #include "triangle.h"
 #include "utils.h"
 #include "matrix.h"
+#include "camera.h"
 
 void update(
 	std::vector<geo::Mesh>& meshes,
 	const matrix::Matrix4x4& projection_matrix,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
-	const vector::Vector3d& camera_position,
+	camera::camera_t& view_camera,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
 	const bool backface_culling,
@@ -37,9 +38,12 @@ void update(
 	previous_frame_time = SDL_GetTicks();
 
 	triangles_to_render = {};
+	vector::Vector3d origin{ 0.0, 0.0, 0.0 };
+	vector::Vector3d target{ 0.0, 0.0, 5.0 };
+	vector::Vector3d up{ 0.0, 1.0, 0.0 };
 	for (auto& mesh_to_render : meshes)
 	{
-		mesh_to_render.m_rotation.m_x += 0.01;
+		//mesh_to_render.m_rotation.m_x += 0.01;
 		//mesh_to_render.m_rotation.m_y += 0.01;
 		//mesh_to_render.m_rotation.m_z += 0.01;
 		//mesh_to_render.m_scale.m_x = 0.5;
@@ -49,11 +53,16 @@ void update(
 		// move pionts away from camera
 		mesh_to_render.m_translation.m_z = 5.0;
 
+		view_camera.m_position.m_x += 0.008;
+		view_camera.m_position.m_y += 0.008;
+
 		matrix::Matrix4x4 scale_matrix{ matrix::Matrix4x4::make_scale_matrix(mesh_to_render.m_scale.m_x, mesh_to_render.m_scale.m_y, mesh_to_render.m_scale.m_z) };
 		matrix::Matrix4x4 translation_matrix{ matrix::Matrix4x4::make_translation_matrix(mesh_to_render.m_translation.m_x, mesh_to_render.m_translation.m_y, mesh_to_render.m_translation.m_z) };
 		matrix::Matrix4x4 rotatation_matrix_x{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_x, 'x') };
 		matrix::Matrix4x4 rotatation_matrix_y{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_y, 'y') };
 		matrix::Matrix4x4 rotatation_matrix_z{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_z, 'z') };
+		// create the view matrix looking at a hardcoded targetpoint
+		matrix::Matrix4x4 view_matrix{ matrix::Matrix4x4::make_view_matrix(view_camera.m_position, target, up) };
 
 
 		for (const auto& face : mesh_to_render.m_faces)
@@ -90,25 +99,22 @@ void update(
 				world_matrix *= rotatation_matrix_x;
 				world_matrix *= translation_matrix;
 				point = world_matrix.mult_vec4d(point);
+				point = view_matrix.mult_vec4d(point);
 				transformed_vertices.push_back(point);
 				
-				matrix::Matrix3x3 world_matrix_for_normals{};
-				//// order matters scale, then rotate
-				world_matrix_for_normals *= scale_matrix;
-				world_matrix_for_normals *= rotatation_matrix_z;
-				world_matrix_for_normals *= rotatation_matrix_y;
-				world_matrix_for_normals *= rotatation_matrix_x;
-				vector::Vector3d transformed_normal{ face_vtx_normals[counter] };
-				transformed_normal = world_matrix_for_normals.get_inverse().get_transpose().mult_vec3d(transformed_normal);
-				transformed_normals.emplace_back(transformed_normal);
-				transformed_normal.normalize();
+				vector::Vector4d transformed_normal{ face_vtx_normals[counter] };
+				transformed_normal = world_matrix.get_inverse().get_transpose().mult_vec4d(transformed_normal);
+				transformed_normal = view_matrix.get_inverse().get_transpose().mult_vec4d(transformed_normal);
+				vector::Vector3d transformed_normal_vec3{ transformed_normal };
+				transformed_normals.emplace_back(transformed_normal_vec3);
+				transformed_normal_vec3.normalize();
 				counter++;
 			}
 
 			std::vector<vector::Vector3d> per_vertex_normals{ mesh_to_render.get_per_vertex_normals(transformed_vertices) };
 			if (backface_culling) {
 				// find the camera ray ie the vector between a point in the triangle and the camera origin
-				vector::Vector3d camera_ray{ camera_position - transformed_vertices[0] };
+				vector::Vector3d camera_ray{ origin - transformed_vertices[0] };
 
 				// calculate how aligned the camera ray is with the face normal (using dot product)
 				if (camera_ray.dot_product(per_vertex_normals[0]) < 0)
@@ -289,7 +295,7 @@ int main(int argc, char* argv[])
 	const shading::Light directional_light{};
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
-	const vector::Vector3d camera_postion{ 0.0, 0.0, 0.0 };
+	camera::camera_t view_camera{ .m_position{ 0.0, 0.0, 0.0 }, .m_direction{ 0.0, 0.0, 1.0 } };
 	int previous_frame_time{ 0 };
 	geo::Mesh mesh{ ".\\assets\\f117.obj" };
 	const SDL_Surface* surface{ IMG_Load(".\\assets\\f117.png") };
@@ -315,7 +321,7 @@ int main(int argc, char* argv[])
 			meshes,
 			projection_matrix,
 			triangles_to_render,
-			camera_postion,
+			view_camera,
 			&display_mode,
 			previous_frame_time,
 			backface_culling,

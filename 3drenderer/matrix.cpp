@@ -17,6 +17,16 @@ namespace matrix
 	{
 	};
 
+	Matrix4x4::Matrix4x4(const std::vector<double>& v1, const std::vector<double>& v2, const std::vector<double>& v3, const std::vector<double>& v4)
+		: m_matrix{
+			v1,
+			v2,
+			v3,
+			v4
+		}
+	{
+	}
+
 	// | (h/w)*1/tan(fov/2)             0              0                 0 |
 	// |                  0  1/tan(fov/2)              0                 0 |
 	// |                  0             0     zf/(zf-zn)  (-zf*zn)/(zf-zn) |
@@ -35,6 +45,33 @@ namespace matrix
 		m_matrix[2][3] = (-zfar * znear) / (zfar - znear);
 		m_matrix[3][2] = 1.0;
 		m_matrix[3][3] = 0.0;
+	}
+
+	// Get the determinant of the 3x3 submatrix after removing row 'r' and column 'c'
+	double Matrix4x4::get_submatrix_determinant(int r, int c) const
+	{
+		Matrix3x3 submatrix;
+		int sub_row = 0, sub_col;
+
+		for (int i = 0; i < 4; i++) {
+			if (i == r) continue;  // Skip row 'r'
+			sub_col = 0;
+			for (int j = 0; j < 4; j++) {
+				if (j == c) continue;  // Skip column 'c'
+				submatrix.m_matrix[sub_row][sub_col] = m_matrix[i][j];
+				sub_col++;
+			}
+			sub_row++;
+		}
+
+		return submatrix.get_determinant();
+	}
+
+	// Calculate the cofactor for element at row 'r' and column 'c'
+	double Matrix4x4::get_cofactor(int r, int c) const
+	{
+		double minor = get_submatrix_determinant(r, c);
+		return ((r + c) % 2 == 0) ? minor : -minor;
 	}
 
 	Matrix4x4 Matrix4x4::get_transpose() const
@@ -136,6 +173,64 @@ namespace matrix
 			break;
 		}
 		return rotation_matrix;
+	}
+
+	Matrix4x4 Matrix4x4::make_view_matrix(const vector::Vector3d& eye, const vector::Vector3d& target, const vector::Vector3d& up)
+	{
+		// Compute the forward (z), right (x), and up (y) vectors
+		vector::Vector3d z{ target - eye };
+		vector::Vector3d x{ up.cross_product(target) };
+		z.normalize();
+		x.normalize();
+		vector::Vector3d y{ z.cross_product(x) };
+
+		// | x.x   x.y   x.z  -dot(x,eye) |
+		// | y.x   y.y   y.z  -dot(y,eye) |
+		// | z.x   z.y   z.z  -dot(z,eye) |
+		// |   0     0     0            1 |
+		return {
+			{x.m_x, x.m_y, x.m_z, -(x.dot_product(eye))},
+			{y.m_x, y.m_y, y.m_z, -(y.dot_product(eye))},
+			{z.m_x, z.m_y, z.m_z, -(z.dot_product(eye))},
+			{0, 0, 0, 1},
+		};
+	}
+
+	double Matrix4x4::get_determinant() const
+	{
+		// Cofactor expansion along the first row
+		double det = m_matrix[0][0] * get_submatrix_determinant(0, 0) -
+			m_matrix[0][1] * get_submatrix_determinant(0, 1) +
+			m_matrix[0][2] * get_submatrix_determinant(0, 2) -
+			m_matrix[0][3] * get_submatrix_determinant(0, 3);
+		return det;
+	}
+
+	Matrix4x4 Matrix4x4::get_inverse() const
+	{
+		double determinant = get_determinant();
+		if (determinant == 0) {
+			// The matrix is not invertible
+			return Matrix4x4();  // Return an empty matrix or handle the error as needed
+		}
+
+		Matrix4x4 adjugate;
+
+		// Calculate the adjugate matrix
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				adjugate.m_matrix[j][i] = get_cofactor(i, j); // Transpose of cofactor matrix
+			}
+		}
+
+		// Divide each element of the adjugate matrix by the determinant
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				adjugate.m_matrix[i][j] /= determinant;
+			}
+		}
+
+		return adjugate;
 	}
 
 	Matrix4x4& Matrix4x4::operator*=(const Matrix4x4& m)
