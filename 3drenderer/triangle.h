@@ -33,14 +33,13 @@ namespace geo
 		//rendering related
 		void draw(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const;
 		//shade the triangle
-		void fill(std::uint32_t*& colour_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour);
-		void fill_pixel(std::uint32_t*& colour_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const;
+		void fill(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour);
+		void fill_pixel(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const;
 
 		std::vector<vector::Vector2d<T>> m_points;
 		std::vector<vector::Vector2d<double>> m_uvs;
 		std::vector<double> m_points_z;
 		std::vector<double> m_points_w;
-		double m_avg_depth{0.0};
 		double m_light_intensity{ 1.0 };
 		vector::Vector2d<double> m_center{ 0.0, 0.0 };
 		vector::Vector2d<double> m_face_normal{ 0.0, 0.0 };
@@ -271,7 +270,7 @@ namespace geo
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void Triangle<T>::fill(std::uint32_t*& colour_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour)
+	void Triangle<T>::fill(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour)
 	{
 		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
 		sort_vertices_by_y();
@@ -302,6 +301,7 @@ namespace geo
 				{
 					fill_pixel(
 						colour_buffer,
+						z_buffer,
 						surface,
 						display_mode,
 						render_flat_shaded,
@@ -340,6 +340,7 @@ namespace geo
 				{
 					fill_pixel(
 						colour_buffer,
+						z_buffer,
 						surface,
 						display_mode,
 						render_flat_shaded,
@@ -355,7 +356,7 @@ namespace geo
 	}
 
 	template <typename T>
-	void Triangle<T>::fill_pixel(std::uint32_t*& colour_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const
+	void Triangle<T>::fill_pixel(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const
 	{
 		vector::Vector3d weights{ get_barycentric_weights({x, y}) };
 		double light_intensity{ 1.0 };
@@ -369,11 +370,12 @@ namespace geo
 			light_intensity = m_per_vtx_lt_intensity[0] * weights.m_x + m_per_vtx_lt_intensity[1] * weights.m_y + m_per_vtx_lt_intensity[2] * weights.m_z;
 			
 		}
+		double reciprocal_w{ (1 / m_points_w[0]) * weights.m_x + (1 / m_points_w[1]) * weights.m_y + (1 / m_points_w[2]) * weights.m_z };
 		if (render_texture)
 		{
 			double u{ (m_uvs[0].m_x / m_points_w[0]) * weights.m_x + (m_uvs[1].m_x / m_points_w[1] * weights.m_y) + (m_uvs[2].m_x / m_points_w[2] * weights.m_z) };
 			double v{ (m_uvs[0].m_y / m_points_w[0]) * weights.m_x + (m_uvs[1].m_y / m_points_w[1] * weights.m_y) + (m_uvs[2].m_y / m_points_w[2] * weights.m_z) };
-			double reciprocal_w{ (1 / m_points_w[0]) * weights.m_x + (1 / m_points_w[1]) * weights.m_y + (1 / m_points_w[2]) * weights.m_z };
+			
 			u /= reciprocal_w;
 			v /= reciprocal_w;
 
@@ -381,9 +383,20 @@ namespace geo
 			int tex_y = abs((int)(v * surface->h)) % surface->h; // prevents texture buffer overflow
 
 			pixel_colour = display::get_pixel_colour(surface, tex_x, tex_y);
+
 		}
 		pixel_colour = display::apply_light_intensity(pixel_colour, light_intensity);
 
-		display::draw_pixel(colour_buffer, display_mode, x, y, pixel_colour);
+		// adjust 1/w so the pixels that are closer to the camera have smaller values
+		reciprocal_w = 1.0 - reciprocal_w;
+
+		// only draw the pixel if the depth value is less than the value previously stored in the pixel;
+		int index{ (display_mode->w * y) + x };
+		if (reciprocal_w < z_buffer[index])
+		{
+			display::draw_pixel(colour_buffer, display_mode, x, y, pixel_colour);
+			z_buffer[index] = reciprocal_w;
+		}
+		
 	}
 }
