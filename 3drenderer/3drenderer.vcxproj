@@ -166,6 +166,7 @@
     <ClCompile Include="vector4d.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="camera.h" />
     <ClInclude Include="display.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="light.h" />
