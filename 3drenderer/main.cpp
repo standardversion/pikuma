@@ -15,6 +15,7 @@
 #include "utils.h"
 #include "matrix.h"
 #include "camera.h"
+#include "clipping.h"
 
 void update(
 	std::vector<geo::Mesh>& meshes,
@@ -318,9 +319,10 @@ int main(int argc, char* argv[])
 	bool render_texture{ false };
 	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
 	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
-	const double znear{ 0.1 };
-	const double zfar{ 100.0 };
-	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
+	const double z_near{ 0.1 };
+	const double z_far{ 100.0 };
+	matrix::Matrix4x4 projection_matrix{fov, aspect, z_near, z_far};
+	std::vector<clip::plane_t> clipping_planes{ clip::init_frustum_planes(fov, z_near, z_far) };
 	while (is_running)
 	{
 		input::process(is_running, view_camera, delta_time, render_mode, backface_culling, render_flat_shaded, render_gouraud_shaded, render_texture, event);
