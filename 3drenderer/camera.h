@@ -7,5 +7,7 @@ namespace camera
 	{
 		vector::Vector3d m_position;
 		vector::Vector3d m_direction;
+		vector::Vector3d m_forward_velocity;
+		float m_yaw;
 	};
 }

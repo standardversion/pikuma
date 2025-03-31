@@ -20,6 +20,7 @@ namespace vector
 		Vector3d operator+(const Vector3d& v) const;
 		Vector3d& operator-=(const Vector3d& v);
 		Vector3d operator-(const Vector3d& v) const;
+		Vector3d operator*(double factor) const;
 		Vector3d& operator*=(double factor);
 		Vector3d& operator/=(double factor);
 		void normalize();

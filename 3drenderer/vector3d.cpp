@@ -44,6 +44,11 @@ namespace vector
 		return Vector3d{ m_x - v.m_x, m_y - v.m_y, m_z - v.m_z };
 	}
 
+	Vector3d Vector3d::operator*(double factor) const
+	{
+		return Vector3d{ m_x * factor, m_y * factor, m_z * factor };
+	}
+
 	Vector3d& Vector3d::operator*=(double factor)
 	{
 		this->m_x *= factor;

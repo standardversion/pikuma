@@ -23,6 +23,7 @@ void update(
 	camera::camera_t& view_camera,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
+	double& delta_time,
 	const bool backface_culling,
 	const shading::Light& light,
 	const bool render_face_center,
@@ -36,19 +37,18 @@ void update(
 	}
 
 	// get a delta time factor converted to seconds to be used to update our objs
-	double delta_time{ (SDL_GetTicks() - previous_frame_time) / 1000.0 };
+	delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
 
 	previous_frame_time = SDL_GetTicks();
 
 	triangles_to_render = {};
 	vector::Vector3d origin{ 0.0, 0.0, 0.0 };
-	vector::Vector3d target{ 0.0, 0.0, 5.0 };
 	vector::Vector3d up{ 0.0, 1.0, 0.0 };
 	for (auto& mesh_to_render : meshes)
 	{
-		mesh_to_render.m_rotation.m_x += 0.2 * delta_time;
-		mesh_to_render.m_rotation.m_y += 0.2 * delta_time;
-		mesh_to_render.m_rotation.m_z += 0.2 * delta_time;
+		//mesh_to_render.m_rotation.m_x += 0.2 * delta_time;
+		//mesh_to_render.m_rotation.m_y += 0.2 * delta_time;
+		//mesh_to_render.m_rotation.m_z += 0.2 * delta_time;
 		//mesh_to_render.m_scale.m_x = 0.5;
 		//mesh_to_render.m_scale.m_y = 0.5;
 		//mesh_to_render.m_scale.m_z = 0.5;
@@ -56,17 +56,20 @@ void update(
 		// move pionts away from camera
 		mesh_to_render.m_translation.m_z = 5.0;
 
-		//view_camera.m_position.m_x += 0.5 * delta_time;
-		//view_camera.m_position.m_y += 0.5 * delta_time;
+		vector::Vector3d target{ 0.0, 0.0, 1.0 };
+		matrix::Matrix4x4 camera_yaw_rotation{ matrix::Matrix4x4::make_rotation_matrix(view_camera.m_yaw, 'y')};
+		view_camera.m_direction = camera_yaw_rotation.mult_vec4d(target);
+
+		//offset the camera position in the direction where the camera is pointing at
+		target = view_camera.m_position + view_camera.m_direction;
+		// create the view matrix looking at a hardcoded targetpoint
+		matrix::Matrix4x4 view_matrix{ matrix::Matrix4x4::make_view_matrix(view_camera.m_position, target, up) };
 
 		matrix::Matrix4x4 scale_matrix{ matrix::Matrix4x4::make_scale_matrix(mesh_to_render.m_scale.m_x, mesh_to_render.m_scale.m_y, mesh_to_render.m_scale.m_z) };
 		matrix::Matrix4x4 translation_matrix{ matrix::Matrix4x4::make_translation_matrix(mesh_to_render.m_translation.m_x, mesh_to_render.m_translation.m_y, mesh_to_render.m_translation.m_z) };
 		matrix::Matrix4x4 rotatation_matrix_x{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_x, 'x') };
 		matrix::Matrix4x4 rotatation_matrix_y{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_y, 'y') };
 		matrix::Matrix4x4 rotatation_matrix_z{ matrix::Matrix4x4::make_rotation_matrix(mesh_to_render.m_rotation.m_z, 'z') };
-		// create the view matrix looking at a hardcoded targetpoint
-		matrix::Matrix4x4 view_matrix{ matrix::Matrix4x4::make_view_matrix(view_camera.m_position, target, up) };
-
 
 		for (const auto& face : mesh_to_render.m_faces)
 		{
@@ -126,7 +129,7 @@ void update(
 				}
 			}
 			// calculate light intensity at the face			
-			double light_intensity{ abs(per_vertex_normals[0].dot_product(light.m_direction))};
+			double light_intensity{ -per_vertex_normals[0].dot_product(light.m_direction)};
 			projected_triangle.m_light_intensity = light_intensity;
 
 			// uvs don't need to be transformed
@@ -298,10 +301,11 @@ int main(int argc, char* argv[])
 	const shading::Light directional_light{};
 	std::vector<geo::Triangle<int>> triangles_to_render{};
 	SDL_Event event{};
-	camera::camera_t view_camera{ .m_position{ 0.0, 0.0, 0.0 }, .m_direction{ 0.0, 0.0, 1.0 } };
+	camera::camera_t view_camera{ .m_position{ 0.0, 0.0, 0.0 }, .m_direction{ 0.0, 0.0, 1.0 }, .m_forward_velocity{ 0.0, 0.0, 0.0 }, .m_yaw{ 0.0 } };
 	int previous_frame_time{ 0 };
-	geo::Mesh mesh{ ".\\assets\\f117.obj" };
-	const SDL_Surface* surface{ IMG_Load(".\\assets\\f117.png") };
+	double delta_time{ 0.0 };
+	geo::Mesh mesh{ ".\\assets\\crab.obj" };
+	const SDL_Surface* surface{ IMG_Load(".\\assets\\crab.png") };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
@@ -319,7 +323,7 @@ int main(int argc, char* argv[])
 	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
 	while (is_running)
 	{
-		input::process(is_running, render_mode, backface_culling, render_flat_shaded, render_gouraud_shaded, render_texture, event);
+		input::process(is_running, view_camera, delta_time, render_mode, backface_culling, render_flat_shaded, render_gouraud_shaded, render_texture, event);
 		update(
 			meshes,
 			projection_matrix,
@@ -327,6 +331,7 @@ int main(int argc, char* argv[])
 			view_camera,
 			&display_mode,
 			previous_frame_time,
+			delta_time,
 			backface_culling,
 			directional_light,
 			render_face_center,
