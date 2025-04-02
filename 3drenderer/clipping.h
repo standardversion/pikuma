@@ -21,5 +21,5 @@ namespace clip
 		vector::Vector3d m_normal;
 	};
 
-	std::vector<plane_t> init_frustum_planes(const double fov, const double z_near, const double z_far);
+	std::vector<plane_t> init_frustum_planes(const double fov_x, const double fov_y, const double z_near, const double z_far);
 }

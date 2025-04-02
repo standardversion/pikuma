@@ -331,12 +331,14 @@ int main(int argc, char* argv[])
 	bool render_flat_shaded{ false };
 	bool render_gouraud_shaded{ false };
 	bool render_texture{ false };
-	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
-	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
+	const double aspect_x{ static_cast<double>(display_mode.w) / static_cast<double>(display_mode.h) };
+	const double aspect_y{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
+	constexpr const double fov_y{ M_PI / 3.0 }; // fov in radians (60 deg)
+	const double fov_x{ atan(tan(fov_y / 2) * aspect_x) * 2.0 }; // fov in radians (60 deg)
 	const double z_near{ 0.1 };
 	const double z_far{ 100.0 };
-	matrix::Matrix4x4 projection_matrix{fov, aspect, z_near, z_far};
-	std::vector<clip::plane_t> clipping_planes{ clip::init_frustum_planes(fov, z_near, z_far) };
+	matrix::Matrix4x4 projection_matrix{fov_y, aspect_y, z_near, z_far};
+	std::vector<clip::plane_t> clipping_planes{ clip::init_frustum_planes(fov_x, fov_y, z_near, z_far) };
 	while (is_running)
 	{
 		input::process(is_running, view_camera, delta_time, render_mode, backface_culling, render_flat_shaded, render_gouraud_shaded, render_texture, event);
