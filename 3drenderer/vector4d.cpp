@@ -12,4 +12,9 @@ namespace vector
 		: m_x{ vec3d.m_x }, m_y{ vec3d.m_y }, m_z{ vec3d.m_z }, m_w{ 1.0 }
 	{
 	};
+
+	double Vector4d::dot_product(const Vector4d& v) const
+	{
+		return (m_x * v.m_x) + (m_y * v.m_y) + (m_z * v.m_z) + (m_w * v.m_w);
+	}
 }

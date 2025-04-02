@@ -15,12 +15,15 @@
 #include "utils.h"
 #include "matrix.h"
 #include "camera.h"
+#include "clipping.h"
+#include "polygon.h"
 
 void update(
 	std::vector<geo::Mesh>& meshes,
 	const matrix::Matrix4x4& projection_matrix,
 	std::vector<geo::Triangle<int>>& triangles_to_render,
 	camera::camera_t& view_camera,
+	std::vector<clip::plane_t>& clipping_planes,
 	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
 	double& delta_time,
@@ -87,9 +90,7 @@ void update(
 				mesh_to_render.m_vertex_normals[face.c - 1]
 
 			};
-			//loop through each vertex and project the points of those faces
-			// convert the triangle points to ints as we'll project to screen space so we're dealing with x & y pixels which are in ints
-			geo::Triangle<int> projected_triangle{ };
+
 			std::vector<vector::Vector4d> transformed_vertices{};
 			std::vector<vector::Vector3d> transformed_normals{};
 			// apply transformations
@@ -112,8 +113,8 @@ void update(
 				transformed_normal = world_matrix.get_inverse().get_transpose().mult_vec4d(transformed_normal);
 				transformed_normal = view_matrix.get_inverse().get_transpose().mult_vec4d(transformed_normal);
 				vector::Vector3d transformed_normal_vec3{ transformed_normal };
-				transformed_normals.emplace_back(transformed_normal_vec3);
 				transformed_normal_vec3.normalize();
+				transformed_normals.emplace_back(transformed_normal_vec3);
 				counter++;
 			}
 
@@ -128,53 +129,69 @@ void update(
 					continue;
 				}
 			}
-			// calculate light intensity at the face			
-			double light_intensity{ -per_vertex_normals[0].dot_product(light.m_direction)};
-			projected_triangle.m_light_intensity = light_intensity;
+
+			//clipping
+			//loop through each vertex and project the points of those faces
+			// convert the triangle points to ints as we'll project to screen space so we're dealing with x & y pixels which are in ints
 
 			// uvs don't need to be transformed
 			std::vector<vector::Vector2d<double>> face_vtx_uvs{
 				mesh_to_render.m_uvs[face.a_uv - 1],
 				mesh_to_render.m_uvs[face.b_uv - 1],
 				mesh_to_render.m_uvs[face.c_uv - 1]
-
 			};
-			// project the point
-			counter = 0;
-			for (const auto& vertex : transformed_vertices)
-			{
-				vector::Vector4d projected_point{ display::project_vec4d(display_mode, projection_matrix, vertex) };
-				projected_triangle.m_per_vtx_lt_intensity.push_back(abs(transformed_normals[counter].dot_product(light.m_direction)));
-				projected_triangle.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
-				projected_triangle.m_points_z.push_back(projected_point.m_z);
-				projected_triangle.m_points_w.push_back(projected_point.m_w);
-				projected_triangle.m_uvs.push_back(face_vtx_uvs[counter]);
-				counter++;
-			}
-			if (render_face_center || render_normals)
-			{
-				vector::Vector3d face_center{ mesh_to_render.get_face_center(transformed_vertices) };
-				vector::Vector4d projected_center_point{ display::project_vec4d(display_mode, projection_matrix, face_center) };
-
-				projected_triangle.m_center.m_x = projected_center_point.m_x;
-				projected_triangle.m_center.m_y = projected_center_point.m_y;
-				if (render_normals)
-				{
-					vector::Vector3d face_normal{ per_vertex_normals[0] };
-					// move the normal to the center of the face
-					face_normal.m_x += face_center.m_x;
-					face_normal.m_y += face_center.m_y;
-					face_normal.m_z += face_center.m_z;
-					face_normal.normalize();
 			
-					vector::Vector4d projected_face_normal_point{ display::project_vec4d(display_mode, projection_matrix, face_normal) };
-
-					projected_triangle.m_face_normal.m_x = projected_face_normal_point.m_x;
-					projected_triangle.m_face_normal.m_y = projected_face_normal_point.m_y;
+			geo::Polygon poly{ transformed_vertices, transformed_normals, face_vtx_uvs };
+			poly.clip(clipping_planes);
+			std::vector<std::vector<vector::Vector4d>> clipped_vertices_array{};
+			std::vector<std::vector<vector::Vector2d<double>>> clipped_uvs_array{};
+			std::vector<std::vector<vector::Vector3d>> clipped_normals_array{};
+			poly.split_into_tris(clipped_vertices_array, clipped_uvs_array, clipped_normals_array);
+			
+			std::size_t clipped_entities_counter{ 0 };
+			for (const auto& clipped_vertex_array : clipped_vertices_array)
+			{
+				geo::Triangle<int> triangle_to_render{ };
+				double light_intensity{ -per_vertex_normals[0].dot_product(light.m_direction) };
+				triangle_to_render.m_light_intensity = light_intensity;
+				// project the triangle
+				counter = 0;
+				for (const auto& vertex : clipped_vertex_array)
+				{
+					vector::Vector4d projected_point{ display::project_vec4d(display_mode, projection_matrix, vertex) };
+					triangle_to_render.m_per_vtx_lt_intensity.push_back(-clipped_normals_array[clipped_entities_counter][counter].dot_product(light.m_direction));
+					triangle_to_render.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
+					triangle_to_render.m_points_z.push_back(projected_point.m_z);
+					triangle_to_render.m_points_w.push_back(projected_point.m_w);
+					triangle_to_render.m_uvs.push_back(clipped_uvs_array[clipped_entities_counter][counter]);
+					counter++;
 				}
-			}
+				if (render_face_center || render_normals)
+				{
+					vector::Vector3d face_center{ mesh_to_render.get_face_center(clipped_vertex_array) };
+					vector::Vector4d projected_center_point{ display::project_vec4d(display_mode, projection_matrix, face_center) };
 
-			triangles_to_render.push_back(projected_triangle);
+					triangle_to_render.m_center.m_x = projected_center_point.m_x;
+					triangle_to_render.m_center.m_y = projected_center_point.m_y;
+					if (render_normals)
+					{
+						vector::Vector3d face_normal{ clipped_normals_array[clipped_entities_counter][0] };
+						// move the normal to the center of the face
+						face_normal.m_x += face_center.m_x;
+						face_normal.m_y += face_center.m_y;
+						face_normal.m_z += face_center.m_z;
+						face_normal.normalize();
+
+						vector::Vector4d projected_face_normal_point{ display::project_vec4d(display_mode, projection_matrix, face_normal) };
+
+						triangle_to_render.m_face_normal.m_x = projected_face_normal_point.m_x;
+						triangle_to_render.m_face_normal.m_y = projected_face_normal_point.m_y;
+					}
+				}
+
+				triangles_to_render.push_back(triangle_to_render);
+				clipped_entities_counter++;
+			}
 		}
 	}
 }
@@ -304,23 +321,26 @@ int main(int argc, char* argv[])
 	camera::camera_t view_camera{ .m_position{ 0.0, 0.0, 0.0 }, .m_direction{ 0.0, 0.0, 1.0 }, .m_forward_velocity{ 0.0, 0.0, 0.0 }, .m_yaw{ 0.0 } };
 	int previous_frame_time{ 0 };
 	double delta_time{ 0.0 };
-	geo::Mesh mesh{ ".\\assets\\crab.obj" };
-	const SDL_Surface* surface{ IMG_Load(".\\assets\\crab.png") };
+	geo::Mesh mesh{ ".\\assets\\cube.obj" };
+	const SDL_Surface* surface{ IMG_Load(".\\assets\\cube.png") };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };
-	int render_mode{ display::RenderModes::shaded };
+	int render_mode{ display::RenderModes::wireframe };
 	bool render_face_center{ false };
 	bool render_normals{ false };
 	bool backface_culling{ true };
-	bool render_flat_shaded{ true };
+	bool render_flat_shaded{ false };
 	bool render_gouraud_shaded{ false };
 	bool render_texture{ false };
-	constexpr const double fov{ M_PI / 3.0 }; // fov in radians (60 deg)
-	const double aspect{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
-	const double znear{ 0.1 };
-	const double zfar{ 100.0 };
-	matrix::Matrix4x4 projection_matrix{fov, aspect, znear, zfar};
+	const double aspect_x{ static_cast<double>(display_mode.w) / static_cast<double>(display_mode.h) };
+	const double aspect_y{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
+	constexpr const double fov_y{ M_PI / 3.0 }; // fov in radians (60 deg)
+	const double fov_x{ atan(tan(fov_y / 2) * aspect_x) * 2.0 }; // fov in radians (60 deg)
+	const double z_near{ 0.1 };
+	const double z_far{ 100.0 };
+	matrix::Matrix4x4 projection_matrix{fov_y, aspect_y, z_near, z_far};
+	std::vector<clip::plane_t> clipping_planes{ clip::init_frustum_planes(fov_x, fov_y, z_near, z_far) };
 	while (is_running)
 	{
 		input::process(is_running, view_camera, delta_time, render_mode, backface_culling, render_flat_shaded, render_gouraud_shaded, render_texture, event);
@@ -329,6 +349,7 @@ int main(int argc, char* argv[])
 			projection_matrix,
 			triangles_to_render,
 			view_camera,
+			clipping_planes,
 			&display_mode,
 			previous_frame_time,
 			delta_time,

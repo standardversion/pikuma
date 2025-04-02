@@ -14,8 +14,9 @@ namespace vector
 		Vector2d<T> operator+(const Vector2d<T>& v) const;
 		Vector2d<T>& operator-=(const Vector2d<T>& v);
 		Vector2d<T> operator-(const Vector2d<T>& v) const;
-		Vector2d<T>& operator*=(double factor);;
-		Vector2d<T>& operator/=(double factor);;
+		Vector2d<T>& operator*=(double factor);
+		Vector2d<T> operator*(double factor) const;
+		Vector2d<T>& operator/=(double factor);
 		void normalize();;
 		double dot_product(const Vector2d<T>& v) const;
 		double cross_product(const Vector2d<T>& v) const;
@@ -84,6 +85,12 @@ namespace vector
 		this->m_x *= factor;
 		this->m_y *= factor;
 		return *this;
+	};
+
+	template <typename T>
+	Vector2d<T> Vector2d<T>::operator*(double factor) const
+	{
+		return Vector2d<T>{ m_x * factor, m_y * factor };
 	};
 
 	template <typename T>

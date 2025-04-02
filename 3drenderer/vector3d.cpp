@@ -8,6 +8,11 @@ namespace vector
 		: m_x{x}, m_y{y}, m_z{z}
 	{ }
 
+	Vector3d::Vector3d(const Vector2d<double>& vec2d)
+		: m_x{ vec2d.m_x }, m_y{ vec2d.m_y }, m_z{ 0.0 }
+	{
+	}
+
 	Vector3d::Vector3d(const Vector4d& vec4d)
 		: m_x{ vec4d.m_x }, m_y{ vec4d.m_y }, m_z{ vec4d.m_z }
 	{

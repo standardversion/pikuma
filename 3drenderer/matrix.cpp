@@ -31,7 +31,7 @@ namespace matrix
 	// |                  0  1/tan(fov/2)              0                 0 |
 	// |                  0             0     zf/(zf-zn)  (-zf*zn)/(zf-zn) |
 	// |                  0             0              1                 0 |
-	Matrix4x4::Matrix4x4(const double fov, const double aspect, const double znear, const double zfar)
+	Matrix4x4::Matrix4x4(const double fov, const double aspect, const double z_near, const double z_far)
 		: m_matrix{
 			{ 1.0, 0, 0, 0},
 			{ 0, 1.0, 0, 0},
@@ -41,8 +41,8 @@ namespace matrix
 	{
 		m_matrix[0][0] = aspect * (1 / tan(fov / 2.0));
 		m_matrix[1][1] = 1 / tan(fov / 2.0);
-		m_matrix[2][2] = zfar / (zfar - znear);
-		m_matrix[2][3] = (-zfar * znear) / (zfar - znear);
+		m_matrix[2][2] = z_far / (z_far - z_near);
+		m_matrix[2][3] = (-z_far * z_near) / (z_far - z_near);
 		m_matrix[3][2] = 1.0;
 		m_matrix[3][3] = 0.0;
 	}
