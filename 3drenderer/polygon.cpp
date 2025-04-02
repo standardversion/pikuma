@@ -86,7 +86,7 @@ namespace geo
 	void Polygon::split_into_tris(
 		std::vector<std::vector<vector::Vector4d>>& vertices_array,
 		std::vector<std::vector<vector::Vector2d<double>>>& uvs_array,
-		std::vector<std::vector<vector::Vector4d>>& normals_array
+		std::vector<std::vector<vector::Vector3d>>& normals_array
 	) const
 	{
 
@@ -97,7 +97,7 @@ namespace geo
 			{
 				std::vector<vector::Vector4d> vertex_array(3);
 				std::vector<vector::Vector2d<double>> uv_array{};
-				std::vector<vector::Vector4d> normal_array(3);
+				std::vector<vector::Vector3d> normal_array(3);
 				std::size_t index0{ 0 };
 				std::size_t index1{ i + 1 };
 				std::size_t index2{ i + 2 };

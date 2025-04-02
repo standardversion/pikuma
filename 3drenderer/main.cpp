@@ -145,7 +145,7 @@ void update(
 			poly.clip(clipping_planes);
 			std::vector<std::vector<vector::Vector4d>> clipped_vertices_array{};
 			std::vector<std::vector<vector::Vector2d<double>>> clipped_uvs_array{};
-			std::vector<std::vector<vector::Vector4d>> clipped_normals_array{};
+			std::vector<std::vector<vector::Vector3d>> clipped_normals_array{};
 			poly.split_into_tris(clipped_vertices_array, clipped_uvs_array, clipped_normals_array);
 			
 			std::size_t clipped_entities_counter{ 0 };
@@ -159,8 +159,7 @@ void update(
 				for (const auto& vertex : clipped_vertex_array)
 				{
 					vector::Vector4d projected_point{ display::project_vec4d(display_mode, projection_matrix, vertex) };
-					triangle_to_render.m_per_vtx_lt_intensity.push_back(-transformed_normals[counter].dot_product(light.m_direction));
-					//triangle_to_render.m_per_vtx_lt_intensity.push_back(-clipped_normals_array[clipped_entities_counter][counter].dot_product(light.m_direction));
+					triangle_to_render.m_per_vtx_lt_intensity.push_back(-clipped_normals_array[clipped_entities_counter][counter].dot_product(light.m_direction));
 					triangle_to_render.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
 					triangle_to_render.m_points_z.push_back(projected_point.m_z);
 					triangle_to_render.m_points_w.push_back(projected_point.m_w);
@@ -322,7 +321,7 @@ int main(int argc, char* argv[])
 	camera::camera_t view_camera{ .m_position{ 0.0, 0.0, 0.0 }, .m_direction{ 0.0, 0.0, 1.0 }, .m_forward_velocity{ 0.0, 0.0, 0.0 }, .m_yaw{ 0.0 } };
 	int previous_frame_time{ 0 };
 	double delta_time{ 0.0 };
-	geo::Mesh mesh{ ".\\assets\\sphere.obj" };
+	geo::Mesh mesh{ ".\\assets\\cube.obj" };
 	const SDL_Surface* surface{ IMG_Load(".\\assets\\cube.png") };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/

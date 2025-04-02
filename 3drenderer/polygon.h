@@ -16,7 +16,7 @@ namespace geo
 		void split_into_tris(
 			std::vector<std::vector<vector::Vector4d>>& vertices,
 			std::vector<std::vector<vector::Vector2d<double>>>& uvs,
-			std::vector<std::vector<vector::Vector4d>>& normals
+			std::vector<std::vector<vector::Vector3d>>& normals
 		) const;
 
 		std::vector<vector::Vector3d> m_vertices;
