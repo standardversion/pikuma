@@ -57,16 +57,19 @@ namespace geo
 	{
 
 		std::vector<std::vector<vector::Vector4d>> triangles{};
-		for (std::size_t i{ 0 }; i < m_vertices.size() - 2; i++)
+		if (m_vertices.size())
 		{
-			std::vector<vector::Vector4d> tri_verts(3);
-			std::size_t index0{ 0 };
-			std::size_t index1{ i + 1 };
-			std::size_t index2{ i + 2 };
-			tri_verts[0] = m_vertices[index0];
-			tri_verts[1] = m_vertices[index1];
-			tri_verts[2] = m_vertices[index2];
-			triangles.emplace_back(tri_verts);
+			for (std::size_t i{ 0 }; i < m_vertices.size() - 2; i++)
+			{
+				std::vector<vector::Vector4d> tri_verts(3);
+				std::size_t index0{ 0 };
+				std::size_t index1{ i + 1 };
+				std::size_t index2{ i + 2 };
+				tri_verts[0] = m_vertices[index0];
+				tri_verts[1] = m_vertices[index1];
+				tri_verts[2] = m_vertices[index2];
+				triangles.emplace_back(tri_verts);
+			}
 		}
 		return triangles;
 	}
