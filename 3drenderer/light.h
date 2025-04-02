@@ -8,6 +8,6 @@ namespace shading
 	public:
 		Light();
 
-		vector::Vector3d m_direction{ 0.0, 0.0, 1.0 };
+		vector::Vector3d m_direction{ -0.770, 0.0, .770 };
 	};
 }

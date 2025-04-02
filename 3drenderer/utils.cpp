@@ -17,4 +17,8 @@ namespace utils
 		}
 		return items;
 	}
+
+	double lerp(double a, double b, double t) {
+		return a + t * (b - a);
+	}
 }

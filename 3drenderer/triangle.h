@@ -275,7 +275,6 @@ namespace geo
 		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
 		sort_vertices_by_y();
 
-		const std::uint32_t light_colour{ display::apply_light_intensity(colour, m_light_intensity) };
 		double x_start_slope{ 0 };
 		double x_end_slope{ 0 };
 		///////////////////////////////////////////////////////
@@ -391,12 +390,15 @@ namespace geo
 		reciprocal_w = 1.0 - reciprocal_w;
 
 		// only draw the pixel if the depth value is less than the value previously stored in the pixel;
+		const int z_buffer_size = display_mode->w * display_mode->h;  // Total size of the array
 		int index{ (display_mode->w * y) + x };
-		if (reciprocal_w < z_buffer[index])
+		if (index >= 0 && index < z_buffer_size)
 		{
-			display::draw_pixel(colour_buffer, display_mode, x, y, pixel_colour);
-			z_buffer[index] = reciprocal_w;
+			if (reciprocal_w < z_buffer[index])
+			{
+				display::draw_pixel(colour_buffer, display_mode, x, y, pixel_colour);
+				z_buffer[index] = reciprocal_w;
+			}
 		}
-		
 	}
 }
