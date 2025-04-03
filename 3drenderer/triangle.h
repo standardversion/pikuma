@@ -31,10 +31,10 @@ namespace geo
 		double get_inverse_slope(std::size_t lower_pt_index, std::size_t higher_pt_index) const;
 		vector::Vector3d get_barycentric_weights(const vector::Vector2d<T>& p) const;
 		//rendering related
-		void draw(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const;
+		void draw(std::uint32_t*& colour_buffer, const std::uint32_t colour) const;
 		//shade the triangle
-		void fill(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour);
-		void fill_pixel(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const;
+		void fill(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour);
+		void fill_pixel(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const;
 
 		std::vector<vector::Vector2d<T>> m_points;
 		std::vector<vector::Vector2d<double>> m_uvs;
@@ -213,11 +213,10 @@ namespace geo
 	}
 
 	template <typename T>
-	void Triangle<T>::draw(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour) const
+	void Triangle<T>::draw(std::uint32_t*& colour_buffer, const std::uint32_t colour) const
 	{
 		display::draw_line(
 			colour_buffer,
-			display_mode,
 			m_points[0].m_x,
 			m_points[0].m_y,
 			m_points[1].m_x,
@@ -226,7 +225,6 @@ namespace geo
 		);
 		display::draw_line(
 			colour_buffer,
-			display_mode,
 			m_points[0].m_x,
 			m_points[0].m_y,
 			m_points[2].m_x,
@@ -235,7 +233,6 @@ namespace geo
 		);
 		display::draw_line(
 			colour_buffer,
-			display_mode,
 			m_points[1].m_x,
 			m_points[1].m_y,
 			m_points[2].m_x,
@@ -270,7 +267,7 @@ namespace geo
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void Triangle<T>::fill(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour)
+	void Triangle<T>::fill(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour)
 	{
 		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
 		sort_vertices_by_y();
@@ -302,7 +299,6 @@ namespace geo
 						colour_buffer,
 						z_buffer,
 						surface,
-						display_mode,
 						render_flat_shaded,
 						render_gouraud_shaded,
 						render_texture,
@@ -341,7 +337,6 @@ namespace geo
 						colour_buffer,
 						z_buffer,
 						surface,
-						display_mode,
 						render_flat_shaded,
 						render_gouraud_shaded,
 						render_texture,
@@ -355,7 +350,7 @@ namespace geo
 	}
 
 	template <typename T>
-	void Triangle<T>::fill_pixel(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const SDL_DisplayMode* display_mode, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const
+	void Triangle<T>::fill_pixel(std::uint32_t*& colour_buffer, double*& z_buffer, const SDL_Surface* surface, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const
 	{
 		vector::Vector3d weights{ get_barycentric_weights({x, y}) };
 		double light_intensity{ 1.0 };
@@ -390,13 +385,14 @@ namespace geo
 		reciprocal_w = 1.0 - reciprocal_w;
 
 		// only draw the pixel if the depth value is less than the value previously stored in the pixel;
-		const int z_buffer_size = display_mode->w * display_mode->h;  // Total size of the array
-		int index{ (display_mode->w * y) + x };
+		vector::Vector2d screen_dimensions{ display::get_display_width_height() };
+		const int z_buffer_size = screen_dimensions.m_x * screen_dimensions.m_y;  // Total size of the array
+		int index{ (screen_dimensions.m_x * y) + x };
 		if (index >= 0 && index < z_buffer_size)
 		{
 			if (reciprocal_w < z_buffer[index])
 			{
-				display::draw_pixel(colour_buffer, display_mode, x, y, pixel_colour);
+				display::draw_pixel(colour_buffer, x, y, pixel_colour);
 				z_buffer[index] = reciprocal_w;
 			}
 		}

@@ -87,7 +87,7 @@ namespace display
 		return std::uint32_t{ a | (r & 0x00FF0000) | (g & 0x0000FF00) | (b & 0x000000FF) };
 	}
 
-	void cleanup(SDL_Window*& window, SDL_Renderer*& renderer, std::uint32_t*& colour_buffer, double*& z_buffer)
+	void cleanup(std::uint32_t*& colour_buffer, double*& z_buffer)
 	{
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(window);
@@ -101,7 +101,7 @@ namespace display
 		z_buffer = nullptr;
 	}
 
-	void clear_colour_buffer(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t colour)
+	void clear_colour_buffer(std::uint32_t*& colour_buffer, const std::uint32_t colour)
 	{
 		// our 2d pixels (x * y) are laid out in a 1d array
 		// so for example, if we're dealing with 1920x1080 the first 1920 indices for the array
@@ -109,16 +109,16 @@ namespace display
 		// so we start with the height ie row one then loop across  with width horizontally to fill that row
 		// with colour values
 		// to access any specific pixel we can get the index using [(width * row) + column]
-		for (int y{ 0 }; y < display_mode->h; y++)
+		for (int y{ 0 }; y < display_mode.h; y++)
 		{
-			for (int x{ 0 }; x < display_mode->w; x++)
+			for (int x{ 0 }; x < display_mode.w; x++)
 			{
-				colour_buffer[(display_mode->w * y) + x] = colour;
+				colour_buffer[(display_mode.w * y) + x] = colour;
 			}
 		}
 	}
 
-	void clear_z_buffer(double*& z_buffer, const SDL_DisplayMode* display_mode)
+	void clear_z_buffer(double*& z_buffer)
 	{
 		// our 2d pixels (x * y) are laid out in a 1d array
 		// so for example, if we're dealing with 1920x1080 the first 1920 indices for the array
@@ -126,31 +126,31 @@ namespace display
 		// so we start with the height ie row one then loop across  with width horizontally to fill that row
 		// with colour values
 		// to access any specific pixel we can get the index using [(width * row) + column]
-		for (int y{ 0 }; y < display_mode->h; y++)
+		for (int y{ 0 }; y < display_mode.h; y++)
 		{
-			for (int x{ 0 }; x < display_mode->w; x++)
+			for (int x{ 0 }; x < display_mode.w; x++)
 			{
-				z_buffer[(display_mode->w * y) + x] = 1.0;
+				z_buffer[(display_mode.w * y) + x] = 1.0;
 			}
 		}
 	}
 
-	void draw_grid(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on)
+	void draw_grid(std::uint32_t*& colour_buffer, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on)
 	{
-		for (int y{ 0 }; y < display_mode->h; y++)
+		for (int y{ 0 }; y < display_mode.h; y++)
 		{
 			bool fill_y = (y + 1) % grid_on ? false : true;
-			for (int x{ 0 }; x < display_mode->w; x++)
+			for (int x{ 0 }; x < display_mode.w; x++)
 			{
 				bool fill_x = (x + 1) % grid_on ? false : true;
 				std::uint32_t colour = fill_x || fill_y ? line_colour : bg_colour;
-				colour_buffer[(display_mode->w * y) + x] = colour;
+				colour_buffer[(display_mode.w * y) + x] = colour;
 			}
 		}
 	}
 
 	// draw line for flat shading
-	void draw_line(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x0, int y0, int x1, int y1, const std::uint32_t colour)
+	void draw_line(std::uint32_t*& colour_buffer, int x0, int y0, int x1, int y1, const std::uint32_t colour)
 	{
 		int delta_x{ x1 - x0 };
 		int delta_y{ y1 - y0 };
@@ -164,28 +164,28 @@ namespace display
 		double current_y{ static_cast<double>(y0) };
 		for (int i{ 0 }; i <= side_length; i++)
 		{
-			draw_pixel(colour_buffer, display_mode, round(current_x), round(current_y), colour);
+			draw_pixel(colour_buffer, round(current_x), round(current_y), colour);
 			current_x += x_increment;
 			current_y += y_increment;
 		}
 	}
 
-	void draw_pixel(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int x, int y, const std::uint32_t colour)
+	void draw_pixel(std::uint32_t*& colour_buffer, int x, int y, const std::uint32_t colour)
 	{
-		if (x >= 0 && x < display_mode->w && y>= 0 &&  y < display_mode->h)
+		if (x >= 0 && x < display_mode.w && y>= 0 &&  y < display_mode.h)
 		{
-			colour_buffer[(display_mode->w * y) + x] = colour;
+			colour_buffer[(display_mode.w * y) + x] = colour;
 		}
 		
 	}
 
-	void draw_rect(std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, int start_x, int start_y, int width, int height, const std::uint32_t colour)
+	void draw_rect(std::uint32_t*& colour_buffer, int start_x, int start_y, int width, int height, const std::uint32_t colour)
 	{
 		for (int i{ 0 }; i < width; i++)
 		{
 			for (int j{ 0 }; j < height; j++)
 			{
-				draw_pixel(colour_buffer, display_mode, start_x + i, start_y + j, colour);
+				draw_pixel(colour_buffer, start_x + i, start_y + j, colour);
 			}
 		}
 	}
@@ -222,7 +222,15 @@ namespace display
 			static_cast<std::uint32_t>(colour.b);
 	}
 
-	bool initialize_window(SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* display_mode)
+	vector::Vector2d<int> get_display_width_height()
+	{
+		return {
+			display_mode.w,
+			display_mode.h
+		};
+	}
+
+	bool initialize_window()
 	{
 		// Initialize the SDL library
 		// SDL_INIT_EVERYTHING flag initializes audio, video, controller etc subsystems
@@ -232,7 +240,7 @@ namespace display
 			return false;
 		}
 		// Get the current display mode so we can figure out current display dimensions
-		if (SDL_GetCurrentDisplayMode(0, display_mode) != 0)
+		if (SDL_GetCurrentDisplayMode(0, &display_mode) != 0)
 		{
 			std::cout << "Error getting SLD Display mode.\n";
 			return false;
@@ -242,8 +250,8 @@ namespace display
 			NULL,
 			SDL_WINDOWPOS_CENTERED,
 			SDL_WINDOWPOS_CENTERED,
-			display_mode->w,
-			display_mode->h,
+			display_mode.w,
+			display_mode.h,
 			SDL_WINDOW_BORDERLESS
 		);
 		if (!window)
@@ -266,50 +274,53 @@ namespace display
 		return true;
 	}
 
-	vector::Vector4d project_vec4d(const SDL_DisplayMode* display_mode, const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d)
+	vector::Vector4d project_vec4d(const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d)
 	{
-		// apply project matrix
-		//vector::Vector4d projected_vertex{ projection_matrix.project(vec4d) };
-		//vector::Vector4d projected_point{ projected_vertex.m_x, projected_vertex.m_y, vec4d.m_z, vec4d.m_w };
+		// apply projection matrix
 		vector::Vector4d projected_point{ projection_matrix.project(vec4d) };
 
 		//scale first
-		projected_point.m_x *= display_mode->w / 2;
-		projected_point.m_y *= display_mode->h / 2;
+		projected_point.m_x *= display_mode.w / 2;
+		projected_point.m_y *= display_mode.h / 2;
 		// invert the y values to account for flipped screen y coordinate
 		// in the model, y values increase as we go up, while on the screen the y increases as we go down
 		projected_point.m_y *= -1.0;
 		// then translate
-		projected_point.m_x += display_mode->w / 2;
-		projected_point.m_y += display_mode->h / 2;
+		projected_point.m_x += display_mode.w / 2;
+		projected_point.m_y += display_mode.h / 2;
 		return projected_point;
 	}
 
-	void render_colour_buffer(SDL_Texture*& colour_buffer_texture, std::uint32_t*& colour_buffer, const SDL_DisplayMode* display_mode, SDL_Renderer*& renderer)
+	void render_colour_buffer(std::uint32_t*& colour_buffer)
 	{
 		// update the texture with the contents of the colour buffer
 		SDL_UpdateTexture(
 			colour_buffer_texture,
 			NULL,
 			colour_buffer,
-			static_cast<int>(display_mode->w * sizeof(std::uint32_t))
+			static_cast<int>(display_mode.w * sizeof(std::uint32_t))
 		);
 		// copy the texture onto the renderer, null, null copies entire texture
 		SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
 	}
 
-	bool setup(SDL_Texture*& colour_buffer_texture, SDL_Window*& window, SDL_Renderer*& renderer, SDL_DisplayMode* displaymode)
+	void render_present()
+	{
+		SDL_RenderPresent(renderer);
+	}
+
+	bool setup()
 	{
 		// first create the window and rendering context
-		bool initialized = initialize_window(window, renderer, displaymode);
+		bool initialized = initialize_window();
 		if (initialized) {
 			// Create a texture for a rendering context. ie to display the colour buffer
 			colour_buffer_texture = SDL_CreateTexture(
 				renderer,
 				SDL_PIXELFORMAT_ARGB8888,
 				SDL_TEXTUREACCESS_STREAMING,
-				displaymode->w,
-				displaymode->h
+				display_mode.w,
+				display_mode.h
 			);
 		}
 		return initialized;

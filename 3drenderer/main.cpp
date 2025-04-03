@@ -24,7 +24,6 @@ void update(
 	std::vector<geo::Triangle<int>>& triangles_to_render,
 	camera::camera_t& view_camera,
 	std::vector<clip::plane_t>& clipping_planes,
-	const SDL_DisplayMode* display_mode,
 	int& previous_frame_time,
 	double& delta_time,
 	const bool backface_culling,
@@ -158,7 +157,7 @@ void update(
 				counter = 0;
 				for (const auto& vertex : clipped_vertex_array)
 				{
-					vector::Vector4d projected_point{ display::project_vec4d(display_mode, projection_matrix, vertex) };
+					vector::Vector4d projected_point{ display::project_vec4d(projection_matrix, vertex) };
 					triangle_to_render.m_per_vtx_lt_intensity.push_back(-clipped_normals_array[clipped_entities_counter][counter].dot_product(light.m_direction));
 					triangle_to_render.m_points.push_back(vector::Vector2d<int>{static_cast<int>(projected_point.m_x), static_cast<int>(projected_point.m_y)});
 					triangle_to_render.m_points_z.push_back(projected_point.m_z);
@@ -169,7 +168,7 @@ void update(
 				if (render_face_center || render_normals)
 				{
 					vector::Vector3d face_center{ mesh_to_render.get_face_center(clipped_vertex_array) };
-					vector::Vector4d projected_center_point{ display::project_vec4d(display_mode, projection_matrix, face_center) };
+					vector::Vector4d projected_center_point{ display::project_vec4d(projection_matrix, face_center) };
 
 					triangle_to_render.m_center.m_x = projected_center_point.m_x;
 					triangle_to_render.m_center.m_y = projected_center_point.m_y;
@@ -182,7 +181,7 @@ void update(
 						face_normal.m_z += face_center.m_z;
 						face_normal.normalize();
 
-						vector::Vector4d projected_face_normal_point{ display::project_vec4d(display_mode, projection_matrix, face_normal) };
+						vector::Vector4d projected_face_normal_point{ display::project_vec4d(projection_matrix, face_normal) };
 
 						triangle_to_render.m_face_normal.m_x = projected_face_normal_point.m_x;
 						triangle_to_render.m_face_normal.m_y = projected_face_normal_point.m_y;
@@ -197,12 +196,9 @@ void update(
 }
 
 void render(
-	SDL_Renderer*& renderer,
-	SDL_Texture*& colour_buffer_texture,
 	std::uint32_t*& colour_buffer,
 	double*& z_buffer,
 	const SDL_Surface* surface,
-	const SDL_DisplayMode* display_mode,
 	const std::uint32_t edge_colour,
 	const std::uint32_t bg_colour,
 	const std::uint32_t vertex_colour,
@@ -221,7 +217,7 @@ void render(
 	bool render_vertex{ false };
 	bool render_shaded{ false };
 	display::activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
-	//display.draw_grid(colour_buffer, display_mode, edge_colour, bg_colour, grid_on);
+	//display.draw_grid(colour_buffer, edge_colour, bg_colour, grid_on);
 
 	for (auto& triangle : triangles_to_render)
 	{
@@ -231,7 +227,6 @@ void render(
 				colour_buffer,
 				z_buffer,
 				surface,
-				display_mode,
 				render_flat_shaded,
 				render_gouraud_shaded,
 				render_texture,
@@ -243,7 +238,6 @@ void render(
 		{
 			triangle.draw(
 				colour_buffer,
-				display_mode,
 				edge_colour
 			);
 		}
@@ -254,7 +248,6 @@ void render(
 			{
 				display::draw_rect(
 					colour_buffer,
-					display_mode,
 					point.m_x,
 					point.m_y,
 					4,
@@ -267,7 +260,6 @@ void render(
 		{
 			display::draw_rect(
 				colour_buffer,
-				display_mode,
 				triangle.m_center.m_x,
 				triangle.m_center.m_y,
 				2,
@@ -279,7 +271,6 @@ void render(
 		{
 			display::draw_line(
 				colour_buffer,
-				display_mode,
 				triangle.m_center.m_x,
 				triangle.m_center.m_y,
 				triangle.m_face_normal.m_x,
@@ -290,34 +281,29 @@ void render(
 	}
 
 	// render the colour buffer
-	display::render_colour_buffer(colour_buffer_texture, colour_buffer, display_mode, renderer);
+	display::render_colour_buffer(colour_buffer);
 	// fill the colour buffer with a colour value
-	display::clear_colour_buffer(colour_buffer, display_mode, bg_colour);
+	display::clear_colour_buffer(colour_buffer, bg_colour);
 
-	display::clear_z_buffer(z_buffer, display_mode);
+	display::clear_z_buffer(z_buffer);
 
 	// Update the screen with any rendering performed since the previous call.
-	SDL_RenderPresent(renderer);
-
+	display::render_present();
 }
 
 
 int main(int argc, char* argv[])
 {
-	SDL_Window* window{ nullptr };
-	SDL_Renderer* renderer{ nullptr };
-	SDL_Texture* colour_buffer_texture{ nullptr };
-	SDL_DisplayMode display_mode;
-	bool is_running{ display::setup(colour_buffer_texture, window, renderer, &display_mode) };
-	std::uint32_t* colour_buffer{ new std::uint32_t[display_mode.w * display_mode.h]{} };
-	double* z_buffer{ new double[display_mode.w * display_mode.h]{} };
+	bool is_running{ display::setup() };
+	vector::Vector2d screen_dimensions{ display::get_display_width_height() };
+	std::uint32_t* colour_buffer{ new std::uint32_t[screen_dimensions.m_x * screen_dimensions.m_y]{} };
+	double* z_buffer{ new double[screen_dimensions.m_x * screen_dimensions.m_y]{} };
 	constexpr const std::uint32_t bg_colour{ 0x00000000 };
 	constexpr const std::uint32_t edge_colour{ 0xFFFFFFFF };
 	constexpr const std::uint32_t vertex_colour{ 0xFFFFFF00 };
 	constexpr const std::uint32_t fill_colour{ 0x00808080 };
 	const shading::Light directional_light{};
 	std::vector<geo::Triangle<int>> triangles_to_render{};
-	SDL_Event event{};
 	camera::camera_t view_camera{ .m_position{ 0.0, 0.0, 0.0 }, .m_direction{ 0.0, 0.0, 1.0 }, .m_forward_velocity{ 0.0, 0.0, 0.0 }, .m_yaw{ 0.0 } };
 	int previous_frame_time{ 0 };
 	double delta_time{ 0.0 };
@@ -333,8 +319,8 @@ int main(int argc, char* argv[])
 	bool render_flat_shaded{ false };
 	bool render_gouraud_shaded{ false };
 	bool render_texture{ false };
-	const double aspect_x{ static_cast<double>(display_mode.w) / static_cast<double>(display_mode.h) };
-	const double aspect_y{ static_cast<double>(display_mode.h) / static_cast<double>(display_mode.w) };
+	const double aspect_x{ static_cast<double>(screen_dimensions.m_x) / static_cast<double>(screen_dimensions.m_y) };
+	const double aspect_y{ static_cast<double>(screen_dimensions.m_y) / static_cast<double>(screen_dimensions.m_x) };
 	constexpr const double fov_y{ M_PI / 3.0 }; // fov in radians (60 deg)
 	const double fov_x{ atan(tan(fov_y / 2) * aspect_x) * 2.0 }; // fov in radians (60 deg)
 	const double z_near{ 0.1 };
@@ -343,14 +329,13 @@ int main(int argc, char* argv[])
 	std::vector<clip::plane_t> clipping_planes{ clip::init_frustum_planes(fov_x, fov_y, z_near, z_far) };
 	while (is_running)
 	{
-		input::process(is_running, view_camera, delta_time, render_mode, backface_culling, render_flat_shaded, render_gouraud_shaded, render_texture, event);
+		input::process(is_running, view_camera, delta_time, render_mode, backface_culling, render_flat_shaded, render_gouraud_shaded, render_texture);
 		update(
 			meshes,
 			projection_matrix,
 			triangles_to_render,
 			view_camera,
 			clipping_planes,
-			&display_mode,
 			previous_frame_time,
 			delta_time,
 			backface_culling,
@@ -358,12 +343,9 @@ int main(int argc, char* argv[])
 			render_face_center,
 			render_normals);
 		render(
-			renderer,
-			colour_buffer_texture,
 			colour_buffer,
 			z_buffer,
 			surface,
-			&display_mode,
 			edge_colour,
 			bg_colour,
 			vertex_colour,
@@ -378,6 +360,6 @@ int main(int argc, char* argv[])
 			render_texture
 		);
 	}
-	display::cleanup(window, renderer, colour_buffer, z_buffer);
+	display::cleanup(colour_buffer, z_buffer);
 	return 0;
 }
