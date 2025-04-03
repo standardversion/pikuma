@@ -22,6 +22,7 @@ namespace display
 	static SDL_DisplayMode display_mode;
 	static std::uint32_t* colour_buffer{ nullptr };
 	static double* z_buffer{ nullptr };
+	static bool make_low_rez{ true };
 	enum RenderModes {
 		wireframe, //0
 		wireframe_vertex, //1
@@ -48,6 +49,7 @@ namespace display
 	std::uint32_t get_pixel_colour(const SDL_Surface* surface, const int x, const int y);
 	double get_z_buffer_value(const std::size_t index);
 	void set_z_buffer_value(const std::size_t index, const double value);
+	void toggle_make_low_rez();
 	bool initialize_window();
 	vector::Vector4d project_vec4d(const matrix::Matrix4x4& projection_matrix, const vector::Vector4d& vec4d);
 	void render_colour_buffer();

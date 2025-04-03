@@ -48,9 +48,9 @@ void update(
 	vector::Vector3d up{ 0.0, 1.0, 0.0 };
 	for (auto& mesh_to_render : meshes)
 	{
-		//mesh_to_render.m_rotation.m_x += 0.2 * delta_time;
-		//mesh_to_render.m_rotation.m_y += 0.2 * delta_time;
-		//mesh_to_render.m_rotation.m_z += 0.2 * delta_time;
+		mesh_to_render.m_rotation.m_x += 0.2 * delta_time;
+		mesh_to_render.m_rotation.m_y += 0.2 * delta_time;
+		mesh_to_render.m_rotation.m_z += 0.2 * delta_time;
 		//mesh_to_render.m_scale.m_x = 0.5;
 		//mesh_to_render.m_scale.m_y = 0.5;
 		//mesh_to_render.m_scale.m_z = 0.5;
@@ -60,7 +60,11 @@ void update(
 
 		vector::Vector3d target{ 0.0, 0.0, 1.0 };
 		matrix::Matrix4x4 camera_yaw_rotation{ matrix::Matrix4x4::make_rotation_matrix(view_camera.m_yaw, 'y')};
-		view_camera.m_direction = camera_yaw_rotation.mult_vec4d(target);
+		matrix::Matrix4x4 camera_pitch_rotation{ matrix::Matrix4x4::make_rotation_matrix(view_camera.m_pitch, 'x') };
+		matrix::Matrix4x4 camera_rotation{};
+		camera_rotation *= camera_pitch_rotation;
+		camera_rotation *= camera_yaw_rotation;
+		view_camera.m_direction = camera_rotation.mult_vec4d(target);
 
 		//offset the camera position in the direction where the camera is pointing at
 		target = view_camera.m_position + view_camera.m_direction;
@@ -215,7 +219,7 @@ void render(
 	bool render_vertex{ false };
 	bool render_shaded{ false };
 	display::activate_render_mode(render_mode, render_wireframe, render_vertex, render_shaded, render_face_center, render_normals);
-	//display.draw_grid(colour_buffer, edge_colour, bg_colour, grid_on);
+	//display::draw_grid(edge_colour, bg_colour, grid_on);
 
 	for (auto& triangle : triangles_to_render)
 	{
@@ -294,11 +298,11 @@ int main(int argc, char* argv[])
 	constexpr const std::uint32_t fill_colour{ 0x00808080 };
 	const shading::Light directional_light{};
 	std::vector<geo::Triangle<int>> triangles_to_render{};
-	camera::camera_t view_camera{ .m_position{ 0.0, 0.0, 0.0 }, .m_direction{ 0.0, 0.0, 1.0 }, .m_forward_velocity{ 0.0, 0.0, 0.0 }, .m_yaw{ 0.0 } };
+	camera::camera_t view_camera{ .m_position{ 0.0, 0.0, 0.0 }, .m_direction{ 0.0, 0.0, 1.0 }, .m_forward_velocity{ 0.0, 0.0, 0.0 }, .m_yaw{ 0.0 }, .m_pitch{ 0.0 } };
 	int previous_frame_time{ 0 };
 	double delta_time{ 0.0 };
-	geo::Mesh mesh{ ".\\assets\\cube.obj" };
-	const SDL_Surface* surface{ IMG_Load(".\\assets\\cube.png") };
+	geo::Mesh mesh{ ".\\assets\\f22.obj" };
+	const SDL_Surface* surface{ IMG_Load(".\\assets\\f22.png") };
 	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
 	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
 	std::vector<geo::Mesh> meshes{ mesh };

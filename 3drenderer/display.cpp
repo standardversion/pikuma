@@ -109,11 +109,12 @@ namespace display
 		// so we start with the height ie row one then loop across  with width horizontally to fill that row
 		// with colour values
 		// to access any specific pixel we can get the index using [(width * row) + column]
-		for (int y{ 0 }; y < display_mode.h; y++)
+		vector::Vector2d screen_dimensions{ get_display_width_height() };
+		for (int y{ 0 }; y < screen_dimensions.m_y; y++)
 		{
-			for (int x{ 0 }; x < display_mode.w; x++)
+			for (int x{ 0 }; x < screen_dimensions.m_x; x++)
 			{
-				colour_buffer[(display_mode.w * y) + x] = colour;
+				colour_buffer[(screen_dimensions.m_x * y) + x] = colour;
 			}
 		}
 	}
@@ -126,25 +127,27 @@ namespace display
 		// so we start with the height ie row one then loop across  with width horizontally to fill that row
 		// with colour values
 		// to access any specific pixel we can get the index using [(width * row) + column]
-		for (int y{ 0 }; y < display_mode.h; y++)
+		vector::Vector2d screen_dimensions{ get_display_width_height() };
+		for (int y{ 0 }; y < screen_dimensions.m_y; y++)
 		{
-			for (int x{ 0 }; x < display_mode.w; x++)
+			for (int x{ 0 }; x < screen_dimensions.m_x; x++)
 			{
-				z_buffer[(display_mode.w * y) + x] = 1.0;
+				z_buffer[(screen_dimensions.m_x * y) + x] = 1.0;
 			}
 		}
 	}
 
 	void draw_grid(const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on)
 	{
-		for (int y{ 0 }; y < display_mode.h; y++)
+		vector::Vector2d screen_dimensions{ get_display_width_height() };
+		for (int y{ 0 }; y < screen_dimensions.m_y; y++)
 		{
 			bool fill_y = (y + 1) % grid_on ? false : true;
-			for (int x{ 0 }; x < display_mode.w; x++)
+			for (int x{ 0 }; x < screen_dimensions.m_x; x++)
 			{
 				bool fill_x = (x + 1) % grid_on ? false : true;
 				std::uint32_t colour = fill_x || fill_y ? line_colour : bg_colour;
-				colour_buffer[(display_mode.w * y) + x] = colour;
+				colour_buffer[(screen_dimensions.m_x * y) + x] = colour;
 			}
 		}
 	}
@@ -172,9 +175,10 @@ namespace display
 
 	void draw_pixel(int x, int y, const std::uint32_t colour)
 	{
-		if (x >= 0 && x < display_mode.w && y>= 0 &&  y < display_mode.h)
+		vector::Vector2d screen_dimensions{ get_display_width_height() };
+		if (x >= 0 && x < screen_dimensions.m_x && y>= 0 &&  y < screen_dimensions.m_y)
 		{
-			colour_buffer[(display_mode.w * y) + x] = colour;
+			colour_buffer[(screen_dimensions.m_x * y) + x] = colour;
 		}
 		
 	}
@@ -224,15 +228,26 @@ namespace display
 
 	vector::Vector2d<int> get_display_width_height()
 	{
-		return {
+		if (make_low_rez)
+		{
+			return {
+			display_mode.w / 3,
+			display_mode.h / 3
+			};
+		}
+		else
+		{
+			return {
 			display_mode.w,
 			display_mode.h
-		};
+			};
+		}
 	}
 
 	double get_z_buffer_value(const std::size_t index)
 	{
-		const int z_buffer_size = display_mode.w * display_mode.w;
+		vector::Vector2d screen_dimensions{ get_display_width_height() };
+		const int z_buffer_size = screen_dimensions.m_x * screen_dimensions.m_y;
 		if (index >= 0 && index < z_buffer_size)
 		{
 			return z_buffer[index];
@@ -241,11 +256,17 @@ namespace display
 
 	void set_z_buffer_value(const std::size_t index, const double value)
 	{
-		const int z_buffer_size = display_mode.w * display_mode.w;
+		vector::Vector2d screen_dimensions{ get_display_width_height() };
+		const int z_buffer_size = screen_dimensions.m_x * screen_dimensions.m_y;
 		if (index >= 0 && index < z_buffer_size)
 		{
 			z_buffer[index] = value;
 		}
+	}
+
+	void toggle_make_low_rez()
+	{
+		make_low_rez = !make_low_rez;
 	}
 
 	bool initialize_window()
@@ -296,27 +317,28 @@ namespace display
 	{
 		// apply projection matrix
 		vector::Vector4d projected_point{ projection_matrix.project(vec4d) };
-
+		vector::Vector2d screen_dimensions{ get_display_width_height() };
 		//scale first
-		projected_point.m_x *= display_mode.w / 2;
-		projected_point.m_y *= display_mode.h / 2;
+		projected_point.m_x *= screen_dimensions.m_x / 2;
+		projected_point.m_y *= screen_dimensions.m_y / 2;
 		// invert the y values to account for flipped screen y coordinate
 		// in the model, y values increase as we go up, while on the screen the y increases as we go down
 		projected_point.m_y *= -1.0;
 		// then translate
-		projected_point.m_x += display_mode.w / 2;
-		projected_point.m_y += display_mode.h / 2;
+		projected_point.m_x += screen_dimensions.m_x / 2;
+		projected_point.m_y += screen_dimensions.m_y / 2;
 		return projected_point;
 	}
 
 	void render_colour_buffer()
 	{
 		// update the texture with the contents of the colour buffer
+		vector::Vector2d screen_dimensions{ get_display_width_height() };
 		SDL_UpdateTexture(
 			colour_buffer_texture,
 			NULL,
 			colour_buffer,
-			static_cast<int>(display_mode.w * sizeof(std::uint32_t))
+			static_cast<int>(screen_dimensions.m_x * sizeof(std::uint32_t))
 		);
 		// copy the texture onto the renderer, null, null copies entire texture
 		SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
@@ -332,16 +354,17 @@ namespace display
 		// first create the window and rendering context
 		bool initialized = initialize_window();
 		if (initialized) {
+			vector::Vector2d screen_dimensions{ get_display_width_height() };
 			// Create a texture for a rendering context. ie to display the colour buffer
 			colour_buffer_texture = SDL_CreateTexture(
 				renderer,
 				SDL_PIXELFORMAT_ARGB8888,
 				SDL_TEXTUREACCESS_STREAMING,
-				display_mode.w,
-				display_mode.h
+				screen_dimensions.m_x,
+				screen_dimensions.m_y
 			);
-			colour_buffer = new std::uint32_t[display_mode.w * display_mode.h]{};
-			z_buffer = new double[display_mode.w * display_mode.h] {};
+			colour_buffer = new std::uint32_t[screen_dimensions.m_x * screen_dimensions.m_y]{};
+			z_buffer = new double[screen_dimensions.m_x * screen_dimensions.m_y] {};
 		}
 		return initialized;
 	}
