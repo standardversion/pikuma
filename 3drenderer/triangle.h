@@ -33,8 +33,8 @@ namespace geo
 		//rendering related
 		void draw(const std::uint32_t colour) const;
 		//shade the triangle
-		void fill(const SDL_Surface* surface, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour);
-		void fill_pixel(const SDL_Surface* surface, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const;
+		void fill(const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour);
+		void fill_pixel(const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const;
 
 		std::vector<vector::Vector2d<T>> m_points;
 		std::vector<vector::Vector2d<double>> m_uvs;
@@ -44,6 +44,7 @@ namespace geo
 		vector::Vector2d<double> m_center{ 0.0, 0.0 };
 		vector::Vector2d<double> m_face_normal{ 0.0, 0.0 };
 		std::vector<double> m_per_vtx_lt_intensity{};
+		SDL_Surface* m_surface{ nullptr };
 	};
 
 	template <typename T>
@@ -264,7 +265,7 @@ namespace geo
 	//
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void Triangle<T>::fill(const SDL_Surface* surface, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour)
+	void Triangle<T>::fill(const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour)
 	{
 		// We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
 		sort_vertices_by_y();
@@ -293,7 +294,6 @@ namespace geo
 				for (int x{ x_start }; x < x_end; x++)
 				{
 					fill_pixel(
-						surface,
 						render_flat_shaded,
 						render_gouraud_shaded,
 						render_texture,
@@ -329,7 +329,6 @@ namespace geo
 				for (int x{ x_start }; x < x_end; x++)
 				{
 					fill_pixel(
-						surface,
 						render_flat_shaded,
 						render_gouraud_shaded,
 						render_texture,
@@ -343,7 +342,7 @@ namespace geo
 	}
 
 	template <typename T>
-	void Triangle<T>::fill_pixel(const SDL_Surface* surface, const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const
+	void Triangle<T>::fill_pixel(const bool render_flat_shaded, const bool render_gouraud_shaded, const bool render_texture, const std::uint32_t colour, int x, int y) const
 	{
 		vector::Vector3d weights{ get_barycentric_weights({x, y}) };
 		double light_intensity{ 1.0 };
@@ -366,10 +365,10 @@ namespace geo
 			u /= reciprocal_w;
 			v /= reciprocal_w;
 
-			int tex_x = abs((int)(u * surface->w)) % surface->w; // prevents texture buffer overflow
-			int tex_y = abs((int)(v * surface->h)) % surface->h; // prevents texture buffer overflow
+			int tex_x = abs((int)(u * m_surface->w)) % m_surface->w; // prevents texture buffer overflow
+			int tex_y = abs((int)(v * m_surface->h)) % m_surface->h; // prevents texture buffer overflow
 
-			pixel_colour = display::get_pixel_colour(surface, tex_x, tex_y);
+			pixel_colour = display::get_pixel_colour(m_surface, tex_x, tex_y);
 
 		}
 		pixel_colour = display::apply_light_intensity(pixel_colour, light_intensity);

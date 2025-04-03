@@ -157,6 +157,7 @@ void update(
 				geo::Triangle<int> triangle_to_render{ };
 				double light_intensity{ -per_vertex_normals[0].dot_product(light.m_direction) };
 				triangle_to_render.m_light_intensity = light_intensity;
+				triangle_to_render.m_surface = mesh_to_render.m_surface;
 				// project the triangle
 				counter = 0;
 				for (const auto& vertex : clipped_vertex_array)
@@ -200,7 +201,6 @@ void update(
 }
 
 void render(
-	const SDL_Surface* surface,
 	const std::uint32_t edge_colour,
 	const std::uint32_t bg_colour,
 	const std::uint32_t vertex_colour,
@@ -226,7 +226,6 @@ void render(
 		if (render_shaded)
 		{
 			triangle.fill(
-				surface,
 				render_flat_shaded,
 				render_gouraud_shaded,
 				render_texture,
@@ -301,11 +300,10 @@ int main(int argc, char* argv[])
 	camera::camera_t view_camera{ .m_position{ 0.0, 0.0, 0.0 }, .m_direction{ 0.0, 0.0, 1.0 }, .m_forward_velocity{ 0.0, 0.0, 0.0 }, .m_yaw{ 0.0 }, .m_pitch{ 0.0 } };
 	int previous_frame_time{ 0 };
 	double delta_time{ 0.0 };
-	geo::Mesh mesh{ ".\\assets\\f22.obj" };
-	const SDL_Surface* surface{ IMG_Load(".\\assets\\f22.png") };
-	/*geo::Mesh mesh2{ ".\\assets\\sphere.obj" };
-	std::vector<geo::Mesh> meshes{ mesh, mesh2 };*/
-	std::vector<geo::Mesh> meshes{ mesh };
+	geo::Mesh mesh{ ".\\assets\\f22.obj", ".\\assets\\f22.png", {0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {-3.0, 0.0, 0.0} };
+	geo::Mesh mesh2{ ".\\assets\\f117.obj", ".\\assets\\f117.png", {0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {0.0, 0.0, 0.0} };
+	geo::Mesh mesh3{ ".\\assets\\efa.obj", ".\\assets\\efa.png", {0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {3.0, 0.0, 0.0} };
+	std::vector<geo::Mesh> meshes{ mesh, mesh2, mesh3 };
 	int render_mode{ display::RenderModes::wireframe };
 	bool render_face_center{ false };
 	bool render_normals{ false };
@@ -337,7 +335,6 @@ int main(int argc, char* argv[])
 			render_face_center,
 			render_normals);
 		render(
-			surface,
 			edge_colour,
 			bg_colour,
 			vertex_colour,

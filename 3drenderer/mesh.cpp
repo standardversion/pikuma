@@ -17,15 +17,16 @@ namespace geo
 	{
 	}
 
-	Mesh::Mesh(const char* obj_filepath)
+	Mesh::Mesh(const char* obj_filename, const char* texture_filename, const vector::Vector3d& rotation, const vector::Vector3d& scale, const vector::Vector3d& translate)
 	{
-		const std::filesystem::path filepath{ std::filesystem::absolute(obj_filepath) };
-		if (!std::filesystem::exists(filepath))
+		const std::filesystem::path obj_filepath{ std::filesystem::absolute(obj_filename) };
+		if (!std::filesystem::exists(obj_filepath))
 		{
 			//handle file does not exist
 		}
-		else {
-			std::ifstream file(filepath);
+		else
+		{
+			std::ifstream file(obj_filepath);
 			std::vector<std::vector<double>> added_normal_indices;
 			std::vector<std::vector<vector::Vector3d>> vertex_normals;
 			std::vector<vector::Vector3d> obj_normals{};
@@ -111,6 +112,19 @@ namespace geo
 				m_vertex_normals.push_back(normal_avg);
 			}
 		}
+
+		const std::filesystem::path tex_filepath{ std::filesystem::absolute(texture_filename) };
+		if (!std::filesystem::exists(tex_filepath))
+		{
+			//handle file does not exist
+		}
+		else
+		{
+			m_surface = IMG_Load(texture_filename);
+		}
+		m_rotation = rotation;
+		m_scale = scale;
+		m_translation = translate;
 	}
 
 	vector::Vector3d Mesh::get_face_center(const std::vector<vector::Vector4d>& face_vertices) const
