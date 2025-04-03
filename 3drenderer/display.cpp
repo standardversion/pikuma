@@ -87,7 +87,7 @@ namespace display
 		return std::uint32_t{ a | (r & 0x00FF0000) | (g & 0x0000FF00) | (b & 0x000000FF) };
 	}
 
-	void cleanup(std::uint32_t*& colour_buffer, double*& z_buffer)
+	void cleanup()
 	{
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(window);
@@ -101,7 +101,7 @@ namespace display
 		z_buffer = nullptr;
 	}
 
-	void clear_colour_buffer(std::uint32_t*& colour_buffer, const std::uint32_t colour)
+	void clear_colour_buffer(const std::uint32_t colour)
 	{
 		// our 2d pixels (x * y) are laid out in a 1d array
 		// so for example, if we're dealing with 1920x1080 the first 1920 indices for the array
@@ -118,7 +118,7 @@ namespace display
 		}
 	}
 
-	void clear_z_buffer(double*& z_buffer)
+	void clear_z_buffer()
 	{
 		// our 2d pixels (x * y) are laid out in a 1d array
 		// so for example, if we're dealing with 1920x1080 the first 1920 indices for the array
@@ -135,7 +135,7 @@ namespace display
 		}
 	}
 
-	void draw_grid(std::uint32_t*& colour_buffer, const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on)
+	void draw_grid(const std::uint32_t line_colour, const std::uint32_t bg_colour, const int grid_on)
 	{
 		for (int y{ 0 }; y < display_mode.h; y++)
 		{
@@ -150,7 +150,7 @@ namespace display
 	}
 
 	// draw line for flat shading
-	void draw_line(std::uint32_t*& colour_buffer, int x0, int y0, int x1, int y1, const std::uint32_t colour)
+	void draw_line(int x0, int y0, int x1, int y1, const std::uint32_t colour)
 	{
 		int delta_x{ x1 - x0 };
 		int delta_y{ y1 - y0 };
@@ -164,13 +164,13 @@ namespace display
 		double current_y{ static_cast<double>(y0) };
 		for (int i{ 0 }; i <= side_length; i++)
 		{
-			draw_pixel(colour_buffer, round(current_x), round(current_y), colour);
+			draw_pixel(round(current_x), round(current_y), colour);
 			current_x += x_increment;
 			current_y += y_increment;
 		}
 	}
 
-	void draw_pixel(std::uint32_t*& colour_buffer, int x, int y, const std::uint32_t colour)
+	void draw_pixel(int x, int y, const std::uint32_t colour)
 	{
 		if (x >= 0 && x < display_mode.w && y>= 0 &&  y < display_mode.h)
 		{
@@ -179,13 +179,13 @@ namespace display
 		
 	}
 
-	void draw_rect(std::uint32_t*& colour_buffer, int start_x, int start_y, int width, int height, const std::uint32_t colour)
+	void draw_rect(int start_x, int start_y, int width, int height, const std::uint32_t colour)
 	{
 		for (int i{ 0 }; i < width; i++)
 		{
 			for (int j{ 0 }; j < height; j++)
 			{
-				draw_pixel(colour_buffer, start_x + i, start_y + j, colour);
+				draw_pixel(start_x + i, start_y + j, colour);
 			}
 		}
 	}
@@ -228,6 +228,24 @@ namespace display
 			display_mode.w,
 			display_mode.h
 		};
+	}
+
+	double get_z_buffer_value(const std::size_t index)
+	{
+		const int z_buffer_size = display_mode.w * display_mode.w;
+		if (index >= 0 && index < z_buffer_size)
+		{
+			return z_buffer[index];
+		}
+	}
+
+	void set_z_buffer_value(const std::size_t index, const double value)
+	{
+		const int z_buffer_size = display_mode.w * display_mode.w;
+		if (index >= 0 && index < z_buffer_size)
+		{
+			z_buffer[index] = value;
+		}
 	}
 
 	bool initialize_window()
@@ -291,7 +309,7 @@ namespace display
 		return projected_point;
 	}
 
-	void render_colour_buffer(std::uint32_t*& colour_buffer)
+	void render_colour_buffer()
 	{
 		// update the texture with the contents of the colour buffer
 		SDL_UpdateTexture(
@@ -322,6 +340,8 @@ namespace display
 				display_mode.w,
 				display_mode.h
 			);
+			colour_buffer = new std::uint32_t[display_mode.w * display_mode.h]{};
+			z_buffer = new double[display_mode.w * display_mode.h] {};
 		}
 		return initialized;
 	}

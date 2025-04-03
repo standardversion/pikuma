@@ -196,8 +196,6 @@ void update(
 }
 
 void render(
-	std::uint32_t*& colour_buffer,
-	double*& z_buffer,
 	const SDL_Surface* surface,
 	const std::uint32_t edge_colour,
 	const std::uint32_t bg_colour,
@@ -224,8 +222,6 @@ void render(
 		if (render_shaded)
 		{
 			triangle.fill(
-				colour_buffer,
-				z_buffer,
 				surface,
 				render_flat_shaded,
 				render_gouraud_shaded,
@@ -237,7 +233,6 @@ void render(
 		if (render_wireframe)
 		{
 			triangle.draw(
-				colour_buffer,
 				edge_colour
 			);
 		}
@@ -247,7 +242,6 @@ void render(
 			for (const auto& point : triangle.m_points)
 			{
 				display::draw_rect(
-					colour_buffer,
 					point.m_x,
 					point.m_y,
 					4,
@@ -259,7 +253,6 @@ void render(
 		if (render_face_center)
 		{
 			display::draw_rect(
-				colour_buffer,
 				triangle.m_center.m_x,
 				triangle.m_center.m_y,
 				2,
@@ -270,7 +263,6 @@ void render(
 		if (render_normals)
 		{
 			display::draw_line(
-				colour_buffer,
 				triangle.m_center.m_x,
 				triangle.m_center.m_y,
 				triangle.m_face_normal.m_x,
@@ -281,11 +273,11 @@ void render(
 	}
 
 	// render the colour buffer
-	display::render_colour_buffer(colour_buffer);
+	display::render_colour_buffer();
 	// fill the colour buffer with a colour value
-	display::clear_colour_buffer(colour_buffer, bg_colour);
+	display::clear_colour_buffer(bg_colour);
 
-	display::clear_z_buffer(z_buffer);
+	display::clear_z_buffer();
 
 	// Update the screen with any rendering performed since the previous call.
 	display::render_present();
@@ -296,8 +288,6 @@ int main(int argc, char* argv[])
 {
 	bool is_running{ display::setup() };
 	vector::Vector2d screen_dimensions{ display::get_display_width_height() };
-	std::uint32_t* colour_buffer{ new std::uint32_t[screen_dimensions.m_x * screen_dimensions.m_y]{} };
-	double* z_buffer{ new double[screen_dimensions.m_x * screen_dimensions.m_y]{} };
 	constexpr const std::uint32_t bg_colour{ 0x00000000 };
 	constexpr const std::uint32_t edge_colour{ 0xFFFFFFFF };
 	constexpr const std::uint32_t vertex_colour{ 0xFFFFFF00 };
@@ -343,8 +333,6 @@ int main(int argc, char* argv[])
 			render_face_center,
 			render_normals);
 		render(
-			colour_buffer,
-			z_buffer,
 			surface,
 			edge_colour,
 			bg_colour,
@@ -360,6 +348,6 @@ int main(int argc, char* argv[])
 			render_texture
 		);
 	}
-	display::cleanup(colour_buffer, z_buffer);
+	display::cleanup();
 	return 0;
 }
