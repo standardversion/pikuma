@@ -10,11 +10,10 @@ namespace input
 		bool& backface_culling,
 		bool& render_flat_shaded,
 		bool& render_gouraud_shaded,
-		bool& render_texture,
-		SDL_Event& event
+		bool& render_texture
 	)
 	{
-		
+		SDL_Event event{};
 		SDL_PollEvent(&event);
 		switch (event.type)
 		{
@@ -76,6 +75,14 @@ namespace input
 			{
 				view_camera.m_yaw -= 1.0 * delta_time;
 			}
+			if (event.key.keysym.sym == SDLK_LEFT)
+			{
+				view_camera.m_pitch += 1.0 * delta_time;
+			}
+			if (event.key.keysym.sym == SDLK_RIGHT)
+			{
+				view_camera.m_pitch -= 1.0 * delta_time;
+			}
 			if (event.key.keysym.sym == SDLK_w)
 			{
 				view_camera.m_forward_velocity = view_camera.m_direction * (5.0 * delta_time);
@@ -85,6 +92,11 @@ namespace input
 			{
 				view_camera.m_forward_velocity = view_camera.m_direction * (5.0 * delta_time);
 				view_camera.m_position -= view_camera.m_forward_velocity;
+			}
+			if (event.key.keysym.sym == SDLK_l)
+			{
+				
+				display::toggle_make_low_rez();
 			}
 			break;
 		}

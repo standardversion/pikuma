@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL.h>
 #include "camera.h"
+#include "display.h"
 
 namespace input
 {
@@ -12,7 +13,6 @@ namespace input
 		bool& backface_culling,
 		bool& render_flat_shaded,
 		bool& render_gouraud_shaded,
-		bool& render_texture,
-		SDL_Event& event
+		bool& render_texture
 	);
 }
