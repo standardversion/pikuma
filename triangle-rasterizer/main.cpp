@@ -14,12 +14,6 @@ bool is_top_or_left(vec::v2d edge)
 	return is_top_edge || is_left_edge;
 }
 
-double edge_cross(const vec::v2d* a, const vec::v2d* b, const vec::v2d* p) {
-	vec::v2d ab = { b->x - a->x, b->y - a->y };
-	vec::v2d ap = { p->x - a->x, p->y - a->y };
-	return ab.x * ap.y - ab.y * ap.x;
-}
-
 
 void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, const std::vector<col::colour_t>& colours, bool top_left_rasterization)
 {
@@ -52,13 +46,14 @@ void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, cons
 	int bias1{ is_top_or_left(bc) ? 0 : -1 };
 	int bias2{ is_top_or_left(ca) ? 0 : -1 };
 
-	vec::v2d pixel_0{ x_min, y_min };
-	//double w0_row{ ab.cross_product(pixel_0) };
-	//double w1_row{ bc.cross_product(pixel_0) };
-	//double w2_row{ ca.cross_product(pixel_0) };
-	double w0_row{ edge_cross(&a, &b, &pixel_0)};
-	double w1_row{ edge_cross(&b, &c, &pixel_0) };
-	double w2_row{ edge_cross(&c, &a, &pixel_0) };
+	vec::v2d p0{ x_min, y_min };
+	vec::v2d ap0{ p0 - a };
+	vec::v2d bp0{ p0 - b };
+	vec::v2d cp0{ p0 - c };
+	double w0_row{ ab.cross_product(ap0) };
+	double w1_row{ bc.cross_product(bp0) };
+	double w2_row{ ca.cross_product(cp0) };
+
 	if (top_left_rasterization)
 	{
 		w0_row += bias0;
