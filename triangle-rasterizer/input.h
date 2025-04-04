@@ -3,5 +3,5 @@
 
 namespace input
 {
-	void process(bool& is_running);
+	void process(bool& is_running, bool& top_left_rasterization);
 }

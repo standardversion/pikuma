@@ -22,9 +22,9 @@ namespace display
 			NULL,
 			SDL_WINDOWPOS_CENTERED,
 			SDL_WINDOWPOS_CENTERED,
-			display_mode.w,
-			display_mode.h,
-			SDL_WINDOW_BORDERLESS
+			display_mode.w/low_rez_factor,
+			display_mode.h/low_rez_factor,
+			SDL_WINDOW_SHOWN
 		);
 		if (!window)
 		{
@@ -48,10 +48,10 @@ namespace display
 			renderer,
 			SDL_PIXELFORMAT_ARGB8888,
 			SDL_TEXTUREACCESS_STREAMING,
-			display_mode.w,
-			display_mode.h
+			display_mode.w/low_rez_factor,
+			display_mode.h/low_rez_factor
 		);
-		colour_buffer = new std::uint32_t[display_mode.w * display_mode.h]{};
+		colour_buffer = new std::uint32_t[display_mode.w/low_rez_factor * display_mode.h/low_rez_factor]{};
 		initialized = true;
 		return initialized;
 	}
@@ -62,7 +62,7 @@ namespace display
 			colour_buffer_texture,
 			NULL,
 			colour_buffer,
-			static_cast<int>(display_mode.w * sizeof(std::uint32_t))
+			static_cast<int>(display_mode.w/low_rez_factor * sizeof(std::uint32_t))
 		);
 		// copy the texture onto the renderer, null, null copies entire texture
 		SDL_RenderCopy(renderer, colour_buffer_texture, NULL, NULL);
@@ -71,20 +71,20 @@ namespace display
 
 	void clear_colour_buffer()
 	{
-		for (int y{ 0 }; y < display_mode.h; y++)
+		for (int y{ 0 }; y < display_mode.h/low_rez_factor; y++)
 		{
-			for (int x{ 0 }; x < display_mode.w; x++)
+			for (int x{ 0 }; x < display_mode.w/low_rez_factor; x++)
 			{
-				colour_buffer[(display_mode.w * y) + x] = 0x00000000;
+				colour_buffer[(display_mode.w/low_rez_factor * y) + x] = 0x00000000;
 			}
 		}
 	}
 
 	void draw_pixel(int x, int y, const std::uint32_t colour)
 	{
-		if (x >= 0 && x < display_mode.w && y >= 0 && y < display_mode.h)
+		if (x >= 0 && x < display_mode.w/low_rez_factor && y >= 0 && y < display_mode.h/low_rez_factor)
 		{
-			colour_buffer[(display_mode.w * y) + x] = colour;
+			colour_buffer[(display_mode.w/low_rez_factor * y) + x] = colour;
 		}
 	}
 }
