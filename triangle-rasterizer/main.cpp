@@ -14,6 +14,12 @@ bool is_top_or_left(vec::v2d edge)
 	return is_top_edge || is_left_edge;
 }
 
+double edge_cross(const vec::v2d* a, const vec::v2d* b, const vec::v2d* p) {
+	vec::v2d ab = { b->x - a->x, b->y - a->y };
+	vec::v2d ap = { p->x - a->x, p->y - a->y };
+	return ab.x * ap.y - ab.y * ap.x;
+}
+
 
 void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, const std::vector<col::colour_t>& colours, bool top_left_rasterization)
 {
@@ -26,6 +32,15 @@ void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, cons
 	int x_max{ (int)std::max(std::max(a.x, b.x), c.x) };
 	int y_max{ (int)std::max(std::max(a.y, b.y), c.y) };
 
+	// Compute the constant delta_s that will be used for the horizontal and vertical steps
+	double delta_w0_col{ a.y - b.y };
+	double delta_w1_col{ b.y - c.y };
+	double delta_w2_col{ c.y - a.y };
+
+	double delta_w0_row{ b.x - a.x };
+	double delta_w1_row{ c.x - b.x };
+	double delta_w2_row{ a.x - c.x };
+
 	vec::v2d ab{ b - a };
 	vec::v2d bc{ c - b };
 	vec::v2d ca{ a - c };
@@ -37,30 +52,28 @@ void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, cons
 	int bias1{ is_top_or_left(bc) ? 0 : -1 };
 	int bias2{ is_top_or_left(ca) ? 0 : -1 };
 
+	vec::v2d pixel_0{ x_min, y_min };
+	//double w0_row{ ab.cross_product(pixel_0) };
+	//double w1_row{ bc.cross_product(pixel_0) };
+	//double w2_row{ ca.cross_product(pixel_0) };
+	double w0_row{ edge_cross(&a, &b, &pixel_0)};
+	double w1_row{ edge_cross(&b, &c, &pixel_0) };
+	double w2_row{ edge_cross(&c, &a, &pixel_0) };
+	if (top_left_rasterization)
+	{
+		w0_row += bias0;
+		w1_row += bias1;
+		w2_row += bias2;
+	}
 
 	for (int y{ y_min }; y <= y_max; y++)
 	{
+		double w0{ w0_row };
+		double w1{ w1_row };
+		double w2{ w2_row };
 		for (int x{ x_min }; x <= x_max; x++)
 		{
-			vec::v2d pixel{ x, y };
-			vec::v2d ap{ pixel - a };
-			vec::v2d bp{ pixel - b };
-			vec::v2d cp{ pixel - c };
-
-			double w0{ ab.cross_product(ap) };
-			double w1{ bc.cross_product(bp) };
-			double w2{ ca.cross_product(cp) };
-
-			if (top_left_rasterization)
-			{
-				w0 += bias0;
-				w1 += bias1;
-				w2 += bias2;
-			}
-
-			bool is_inside{ false };
-			is_inside = w0 >= 0 && w1 >= 0 && w2 >= 0;
-
+			bool is_inside{ w0 >= 0 && w1 >= 0 && w2 >= 0 };
 			if (is_inside)
 			{
 				double alpha{ w0 / area };
@@ -80,7 +93,13 @@ void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, cons
 
 				display::draw_pixel(x, y, interp_colour);
 			}
+			w0 += delta_w0_col;
+			w1 += delta_w1_col;
+			w2 += delta_w2_col;
 		}
+		w0_row += delta_w0_row;
+		w1_row += delta_w1_row;
+		w2_row += delta_w2_row;
 	}
 }
 
