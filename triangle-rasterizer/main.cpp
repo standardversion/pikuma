@@ -42,9 +42,9 @@ void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, cons
 	double area{ ab.cross_product(bc) };
 
 	// Fill convention (top-left rasterization rule)
-	int bias0{ is_top_or_left(ab) ? 0 : -1 };
-	int bias1{ is_top_or_left(bc) ? 0 : -1 };
-	int bias2{ is_top_or_left(ca) ? 0 : -1 };
+	double bias0{ is_top_or_left(ab) ? 0 : -0.0001 };
+	double bias1{ is_top_or_left(bc) ? 0 : -0.0001 };
+	double bias2{ is_top_or_left(ca) ? 0 : -0.0001 };
 
 	vec::v2d p0{ x_min, y_min };
 	vec::v2d ap0{ p0 - a };
@@ -98,10 +98,29 @@ void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, cons
 	}
 }
 
+void render(const std::vector<vec::v2d>& vertices, const std::vector<col::colour_t>& colours, bool top_left_rasterization)
+{
+	double angle{ (SDL_GetTicks() / 1000.0f) * 0.1 };
+	vec::v2d screen_dimensions{ display::get_screen_dimension() };
+	vec::v2d center{ screen_dimensions.x / 2.0f, screen_dimensions.y / 2.0f };
+	vec::v2d v0{ vertices[0].rotate(center, angle) };
+	vec::v2d v1{ vertices[1].rotate(center, angle) };
+	vec::v2d v2{ vertices[2].rotate(center, angle) };
+	vec::v2d v3{ vertices[3].rotate(center, angle) };
+	vec::v2d v4{ vertices[4].rotate(center, angle) };
+
+	fill_triangle(v0, v1, v2, colours, top_left_rasterization);
+	fill_triangle(v3, v2, v1, colours, top_left_rasterization);
+	fill_triangle(v4, v1, v0, colours, top_left_rasterization);
+	display::render_colour_buffer();
+	display::clear_colour_buffer();
+}
+
 
 int main(int argc, char* argv[])
 {
 	bool is_running{ display::setup() };
+	
 	std::vector<vec::v2d> vertices{
 		{ 140, 140 },
 		{ 180, 140 },
@@ -109,6 +128,7 @@ int main(int argc, char* argv[])
 		{ 190, 190 },
 		{ 175, 120 }
 	};
+
 	std::vector<col::colour_t> colours{
 		{ 0xFF, 0x00, 0x00 },
 		{ 0x00, 0xFF, 0x00 },
@@ -119,11 +139,7 @@ int main(int argc, char* argv[])
 	while (is_running)
 	{
 		input::process(is_running, top_left_rasterization);
-		fill_triangle(vertices[0], vertices[1], vertices[2], colours, top_left_rasterization);
-		fill_triangle(vertices[3], vertices[2], vertices[1], colours, top_left_rasterization);
-		fill_triangle(vertices[4], vertices[1], vertices[0], colours, top_left_rasterization);
-		display::render_colour_buffer();
-		display::clear_colour_buffer();
+		render(vertices, colours, top_left_rasterization);
 	}
 	return 0;
 }

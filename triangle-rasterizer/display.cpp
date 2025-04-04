@@ -87,4 +87,12 @@ namespace display
 			colour_buffer[(display_mode.w/low_rez_factor * y) + x] = colour;
 		}
 	}
+
+	vec::v2d get_screen_dimension()
+	{
+		return {
+			double(display_mode.h / low_rez_factor),
+			double(display_mode.h / low_rez_factor)
+		};
+	}
 }

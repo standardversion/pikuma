@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL.h>
 #include <cstdint>
+#include "vector2d.h"
 
 namespace display
 {
@@ -15,5 +16,6 @@ namespace display
 	void render_colour_buffer();
 	void clear_colour_buffer();
 	void draw_pixel(int x, int y, const std::uint32_t colour);
+	vec::v2d get_screen_dimension();
 }
 

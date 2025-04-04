@@ -9,5 +9,6 @@ namespace vec
 
 		v2d operator-(const v2d& v) const;
 		double cross_product(const v2d& v) const;
+		v2d rotate(const v2d& center, double angle) const;
 	};
 }
