@@ -4,6 +4,7 @@
 #include "display.h"
 #include "input.h"
 #include "vector2d.h"
+#include "colour.h"
 
 
 bool is_top_or_left(vec::v2d edge)
@@ -14,7 +15,7 @@ bool is_top_or_left(vec::v2d edge)
 }
 
 
-void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, bool top_left_rasterization, const std::uint32_t colour)
+void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, const std::vector<col::colour_t>& colours, bool top_left_rasterization)
 {
 	/*   A   */
 	/*  / \  */
@@ -28,6 +29,8 @@ void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, bool
 	vec::v2d ab{ b - a };
 	vec::v2d bc{ c - b };
 	vec::v2d ca{ a - c };
+
+	double area{ ab.cross_product(bc) };
 
 	// Fill convention (top-left rasterization rule)
 	int bias0{ is_top_or_left(ab) ? 0 : -1 };
@@ -44,23 +47,38 @@ void fill_triangle(const vec::v2d& a, const vec::v2d& b, const vec::v2d& c, bool
 			vec::v2d bp{ pixel - b };
 			vec::v2d cp{ pixel - c };
 
-			double ab_cross_ap{ ab.cross_product(ap) };
-			double bc_cross_bp{ bc.cross_product(bp) };
-			double ca_cross_cp{ ca.cross_product(cp) };
+			double w0{ ab.cross_product(ap) };
+			double w1{ bc.cross_product(bp) };
+			double w2{ ca.cross_product(cp) };
 
 			if (top_left_rasterization)
 			{
-				ab_cross_ap += bias0;
-				bc_cross_bp += bias1;
-				ca_cross_cp += bias2;
+				w0 += bias0;
+				w1 += bias1;
+				w2 += bias2;
 			}
 
 			bool is_inside{ false };
-			is_inside = ab_cross_ap >= 0 && bc_cross_bp >= 0 && ca_cross_cp >= 0;
+			is_inside = w0 >= 0 && w1 >= 0 && w2 >= 0;
 
 			if (is_inside)
 			{
-				display::draw_pixel(x, y, colour);
+				double alpha{ w0 / area };
+				double beta{ w1 / area };
+				double gamma{ w2 / area };
+
+				int colour_a = 0xFF;
+				int colour_r = (alpha)*colours[0].r + (beta)*colours[1].r + (gamma)*colours[2].r;
+				int colour_g = (alpha)*colours[0].g + (beta)*colours[1].g + (gamma)*colours[2].g;
+				int colour_b = (alpha)*colours[0].b + (beta)*colours[1].b + (gamma)*colours[2].b;
+
+				uint32_t interp_colour = 0x00000000;
+				interp_colour = (interp_colour | colour_a) << 8;
+				interp_colour = (interp_colour | colour_b) << 8;
+				interp_colour = (interp_colour | colour_g) << 8;
+				interp_colour = (interp_colour | colour_r);
+
+				display::draw_pixel(x, y, interp_colour);
 			}
 		}
 	}
@@ -77,14 +95,19 @@ int main(int argc, char* argv[])
 		{ 190, 190 },
 		{ 175, 120 }
 	};
+	std::vector<col::colour_t> colours{
+		{ 0xFF, 0x00, 0x00 },
+		{ 0x00, 0xFF, 0x00 },
+		{ 0x00, 0x00, 0xFF }
+	};
 	bool top_left_rasterization{ true };
 
 	while (is_running)
 	{
 		input::process(is_running, top_left_rasterization);
-		fill_triangle(vertices[0], vertices[1], vertices[2], top_left_rasterization, 0xFFFFFF00);
-		fill_triangle(vertices[3], vertices[2], vertices[1], top_left_rasterization, 0xFFA74DE3);
-		fill_triangle(vertices[4], vertices[1], vertices[0], top_left_rasterization, 0xFF0390FC);
+		fill_triangle(vertices[0], vertices[1], vertices[2], colours, top_left_rasterization);
+		fill_triangle(vertices[3], vertices[2], vertices[1], colours, top_left_rasterization);
+		fill_triangle(vertices[4], vertices[1], vertices[0], colours, top_left_rasterization);
 		display::render_colour_buffer();
 		display::clear_colour_buffer();
 	}

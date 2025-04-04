@@ -161,6 +161,7 @@
     <ClCompile Include="vector2d.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="colour.h" />
     <ClInclude Include="display.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="vector2d.h" />
